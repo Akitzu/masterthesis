@@ -1,0 +1,23 @@
+name: simsopt
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy>=1.22
+  - scipy
+  - cmake
+  - ninja
+  - pybind11
+  - scikit-build
+  - matplotlib
+  - monty
+  - nptyping
+  - Deprecated
+  - randomgen
+  - ruamel.yaml
+  - sympy
+  - h5py
+  - f90nml
+  - pyevtk
+  - setuptools_scm
+  - traitlets
