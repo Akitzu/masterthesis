@@ -9,7 +9,6 @@ from simsopt.field import (
     SurfaceClassifier,
     compute_fieldlines,
     LevelsetStoppingCriterion,
-    plot_poincare_data,
 )
 from simsopt.util import comm_world
 from simsopt.geo import SurfaceRZFourier
@@ -207,13 +206,85 @@ def trace(bs, tf, xx, **kwargs):
 
 ### Different ways to draw a Poincare plot ###
 
+def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=False, aspect='equal', dpi=300, xlims=None, 
+                       ylims=None, surf=None, s=2, marker='o'):
+    """
+    Create a poincare plot. Usage:
 
-def poincare(engine, bs, RZstart, phis, sc_fieldline=None, **kwargs):
+    .. code-block::
+
+        phis = np.linspace(0, 2*np.pi/nfp, nphis, endpoint=False)
+        res_tys, res_phi_hits = compute_fieldlines(
+            bsh, R0, Z0, tmax=1000, phis=phis, stopping_criteria=[])
+        plot_poincare_data(res_phi_hits, phis, '/tmp/fieldlines.png')
+
+    Requires matplotlib to be installed.
+
+    """
+    import matplotlib.pyplot as plt
+    from math import ceil, sqrt
+    nrowcol = ceil(sqrt(len(phis)))
+    plt.figure()
+    fig, axs = plt.subplots(nrowcol, nrowcol, figsize=(8, 5))
+    if len(phis) == 1:
+        axs = np.array([[axs]])
+    for ax in axs.ravel():
+        ax.set_aspect(aspect)
+    color = None
+    for i in range(len(phis)):
+        row = i//nrowcol
+        col = i % nrowcol
+        if i != len(phis) - 1:
+            axs[row, col].set_title(f"$\\phi = {phis[i]/np.pi:.2f}\\pi$ ", loc='left', y=0.0)
+        else:
+            axs[row, col].set_title(f"$\\phi = {phis[i]/np.pi:.2f}\\pi$ ", loc='right', y=0.0)
+        if row == nrowcol - 1:
+            axs[row, col].set_xlabel("$r$")
+        if col == 0:
+            axs[row, col].set_ylabel("$z$")
+        if col == 1:
+            axs[row, col].set_yticklabels([])
+        if xlims is not None:
+            axs[row, col].set_xlim(xlims)
+        if ylims is not None:
+            axs[row, col].set_ylim(ylims)
+        for j in range(len(fieldlines_phi_hits)):
+            lost = fieldlines_phi_hits[j][-1, 1] < 0
+            if mark_lost:
+                color = 'r' if lost else 'g'
+            data_this_phi = fieldlines_phi_hits[j][np.where(fieldlines_phi_hits[j][:, 1] == i)[0], :]
+            if data_this_phi.size == 0:
+                continue
+            r = np.sqrt(data_this_phi[:, 2]**2+data_this_phi[:, 3]**2)
+            axs[row, col].scatter(r, data_this_phi[:, 4], marker=marker, s=s, linewidths=0, c=color)
+
+        plt.rc('axes', axisbelow=True)
+        axs[row, col].grid(True, linewidth=0.5)
+
+        # if passed a surface, plot the plasma surface outline
+        if surf is not None:
+            cross_section = surf.cross_section(phi=phis[i])
+            r_interp = np.sqrt(cross_section[:, 0] ** 2 + cross_section[:, 1] ** 2)
+            z_interp = cross_section[:, 2]
+            axs[row, col].plot(r_interp, z_interp, linewidth=1, c='k')
+
+    plt.tight_layout()
+    if filename is not None:
+        plt.savefig(filename, dpi=dpi)
+    return fig, axs
+
+
+def poincare(engine, bs, RZstart, phis, sc_fieldline=None, plot = True, **kwargs):
     if engine == "simsopt":
-        return poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs)
+        fieldlines_tys, fieldlines_phi_hits = poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs)
     elif engine == "ivp":
-        return poincare_ivp(bs, RZstart, phis, **kwargs)
+        fieldlines_tys, fieldlines_phi_hits = poincare_ivp(bs, RZstart, phis, **kwargs)
 
+    if plot:
+        fig, ax = plot_poincare_data(fieldlines_phi_hits, phis)
+        return fieldlines_tys, fieldlines_phi_hits, fig, ax
+
+    return fieldlines_tys, fieldlines_phi_hits
 
 def poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs):
     options = {"tmax": 40000, "tol": 1e-7}
@@ -230,10 +301,7 @@ def poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs):
         stopping_criteria=[LevelsetStoppingCriterion(sc_fieldline.dist)],
     )
 
-    if comm_world is None or comm_world.rank == 0:
-        fig, axs = plot_poincare_data(fieldlines_phi_hits, phis)
-
-    return fig, axs
+    return fieldlines_tys, fieldlines_phi_hits
 
 
 def poincare_ivp(bs, RZstart, phis, **kwargs):
