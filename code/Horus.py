@@ -1,6 +1,7 @@
 import numpy as np
+from multiprocessing import Pool
 from scipy.integrate import solve_ivp
-from simsopt.configs import get_ncsx_data
+from simsopt.configs import get_ncsx_data, get_w7x_data
 from simsopt.field import (
     MagneticField,
     BiotSavart,
@@ -33,7 +34,9 @@ def cyltocart(r, theta, z):
 
 
 def carttocyl(x, y, z):
-    return np.linalg.inv(cyltocart(x, y, z))
+    r = np.sqrt(x ** 2 + y ** 2)
+    theta = np.arctan2(y, x)
+    return np.linalg.inv(cyltocart(r, theta, z))
 
 
 def normalize(v: np.ndarray) -> np.ndarray:
@@ -78,6 +81,10 @@ def ncsx():
     """Get the NCSX stellarator configuration."""
     return stellarator(*get_ncsx_data(), nfp=3)
 
+def w7x():
+    """Get the W7-X stellarator configuration."""
+    return stellarator(*get_w7x_data(), nfp=5, surface_radius=2)
+
 def stellarator(curves, currents, ma, nfp, **kwargs):
     """Set up a stellarator configuration and returns the magnetic field and the interpolated magnetic field as well as coils and the magnetic axis.
 
@@ -93,11 +100,12 @@ def stellarator(curves, currents, ma, nfp, **kwargs):
         mpol (int): number of poloidal modes
         ntor (int): number of toroidal modes
         stellsym (bool): whether to exploit stellarator symmetry
+        surface_radius (float): radius of the surface
 
     Returns:
         tuple: (Biot-Savart object, InterpolatedField object, (nfp, coils, ma, sc_fieldline))
     """
-    options = {"degree": 2, "n": 20, "mpol": 5, "ntor": 5, "stellsym": True}
+    options = {"degree": 2, "surface_radius": 0.7, "n": 20, "mpol": 5, "ntor": 5, "stellsym": True}
     options.update(kwargs)
 
     # Load the NCSX data and create the coils
@@ -117,7 +125,7 @@ def stellarator(curves, currents, ma, nfp, **kwargs):
         nphi=64,
         ntheta=24,
     )
-    s.fit_to_curve(ma, 0.70, flip_theta=False)
+    s.fit_to_curve(ma, options['surface_radius'], flip_theta=False)
     sc_fieldline = SurfaceClassifier(s, h=0.03, p=2)
 
     # Bounds for the interpolated magnetic field chosen so that the surface is
@@ -221,7 +229,6 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
     Requires matplotlib to be installed.
 
     """
-    import matplotlib.pyplot as plt
     from math import ceil, sqrt
     nrowcol = ceil(sqrt(len(phis)))
     plt.figure()
@@ -274,10 +281,10 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
     return fig, axs
 
 
-def poincare(engine, bs, RZstart, phis, sc_fieldline=None, plot = True, **kwargs):
+def poincare(bs, RZstart, phis, sc_fieldline=None, engine = "simsopt", plot = True, **kwargs):
     if engine == "simsopt":
         fieldlines_tys, fieldlines_phi_hits = poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs)
-    elif engine == "ivp":
+    elif engine == "scipy":
         fieldlines_tys, fieldlines_phi_hits = poincare_ivp(bs, RZstart, phis, **kwargs)
 
     if plot:
@@ -314,16 +321,21 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
     }
     options.update(kwargs)
 
-    def Bfield_2D(t, xx):
-        xx = xx.reshape((-1, 3))
-        bs.set_points(xx)
-        B = carttocyl @ bs.B().reshape(3, -1)
-        return B[0, 0] / B[1, 0], B[2, 0] / B[1, 0]
+    def Bfield_2D(t, rzs):
+        rzs = rzs.reshape((-1, 2))
+        rphizs = np.ascontiguousarray(np.hstack((rzs[:, 0], phis[0]*np.ones(rzs.shape[0]), rzs[:, 1])))
+        bs.set_points_cyl(rphizs)
+        Bs = list()
+        for position, B in zip(rphizs, bs.B()):
+            B = carttocyl(*position) @ B.reshape(3, -1)
+            Bs.append(np.array([B[0, 0] / B[1, 0], B[2, 0] / B[1, 0]]))
 
+        return np.array(Bs).flatten()
+    
     out = solve_ivp(
         Bfield_2D,
-        [0, 1],
-        RZstart,
+        [0, options['tend']],
+        RZstart.flatten(),
         t_eval=phis,
         method=options["method"],
         rtol=options["rtol"],
@@ -333,6 +345,19 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 
 ### Convergence domain for the X-O point finders ###
 
+# Define a function to be executed in parallel
+def compute_fp(i, r, z, ps, iparams, pparams, options):
+    fp = FixedPoint(ps, pparams, integrator_params=iparams)
+    fp_result = fp.compute(
+        guess=[r, z],
+        pp=options["pp"],
+        qq=options["qq"],
+        sbegin=options["sbegin"],
+        send=options["send"],
+        tol=options["tol"],
+        checkonly=options["checkonly"],
+    )
+    return i, fp_result
 
 def convergence_domain(ps, Rw, Zw, **kwargs):
     """Compute where the FixedPoint solver converge to in the R-Z plane. Each point from the meshgrid given by the input Rw and Zw is tested for convergence.
@@ -383,40 +408,31 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
     # set up the point finder
     pparams = {"nrestart": 0, "niter": 30}
     pparams.update(kwargs)
-
-    fp = FixedPoint(ps, pparams, integrator_params=iparams)
+    
     R, Z = np.meshgrid(Rw, Zw)
 
-    assigned_to = list()
+    assigned_to = np.ones(R.size, dtype=int) * -1
     fixed_points = list()
+    fp_result_list = list()
+    
+    # Use a process pool executor to parallelize the loop
+    with Pool() as p:
+        fp_result_list = p.map(compute_fp, [enumerate(zip(R.flatten(), Z.flatten())), [ps]*R.size, [iparams]*R.size, [pparams]*R.size, [options]*R.size])
 
-    for r, z in zip(R.flatten(), Z.flatten()):
-        fp_result = fp.compute(
-            guess=[r, z],
-            pp=options["pp"],
-            qq=options["qq"],
-            sbegin=options["sbegin"],
-            send=options["send"],
-            tol=options["tol"],
-            checkonly=options["checkonly"],
-        )
-
+    for i, fp_result in fp_result_list:
         if fp_result is not None:
             fp_result_xyz = np.array([fp_result.x[0], fp_result.y[0], fp_result.z[0]])
             assigned = False
             for j, fpt in enumerate(fixed_points):
                 fpt_xyz = np.array([fpt.x[0], fpt.y[0], fpt.z[0]])
                 if np.isclose(fp_result_xyz, fpt_xyz, atol=options['eps']).all():
-                    assigned_to.append(j)
+                    assigned_to[i] = j
                     assigned = True
             if not assigned:
-                assigned_to.append(len(fixed_points))
+                assigned_to[i] = len(fixed_points)
                 fixed_points.append(fp_result)
-        else:
-            assigned_to.append(-1)
 
     return R, Z, assigned_to, fixed_points
-
 
 def plot_convergence_domain(R, Z, assigned_to, fixed_points, ax=None, colors=None):
     """Plot the convergence domain for FixedPoint solver in the R-Z plane. If ax is None, a new figure is created,

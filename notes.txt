@@ -1,0 +1,15 @@
+intel-oneapi-mpi
+intel-oneapi-mkl
+python/3.10.4
+pympi4py
+hdf5
+py-pybind11
+cmake
+ninja
+boost
+eigen
+
+vimrc !
+
+
+idea : if we find the fix point of the map that has qq and pp numbers, can we see the R,Z plain as the C plane and use the roots to plot the fractal behavior. Does this coincide with the actual numerical findings ?
