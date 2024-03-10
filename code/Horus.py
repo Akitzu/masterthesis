@@ -294,7 +294,7 @@ def poincare(bs, RZstart, phis, sc_fieldline=None, engine = "simsopt", plot = Tr
     return fieldlines_tys, fieldlines_phi_hits
 
 def poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs):
-    options = {"tmax": 40000, "tol": 1e-7}
+    options = {"tmax": 40000, "tol": 1e-7, "comm": None}
     options.update(kwargs)
 
     fieldlines_tys, fieldlines_phi_hits = compute_fieldlines(
@@ -303,7 +303,7 @@ def poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs):
         RZstart[:, 1],
         tmax=options["tmax"],
         tol=options["tol"],
-        comm=comm_world,
+        comm=options["comm"],
         phis=phis,
         stopping_criteria=[LevelsetStoppingCriterion(sc_fieldline.dist)],
     )
