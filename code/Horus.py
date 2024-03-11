@@ -34,7 +34,7 @@ def cyltocart(r, theta, z):
 
 
 def carttocyl(x, y, z):
-    r = np.sqrt(x ** 2 + y ** 2)
+    r = np.sqrt(x**2 + y**2)
     theta = np.arctan2(y, x)
     return np.linalg.inv(cyltocart(r, theta, z))
 
@@ -73,6 +73,24 @@ class SimsoptBfieldProblem(CartesianBfield):
         B = self.B(xyz)
         return [B], self.bs.dB_by_dX().reshape(3, 3)
 
+    def B_many(self, x1arr, x2arr, x3arr, input1D=True):
+        if input1D:
+            xyz = np.array([x1arr, x2arr, x3arr], dtype=np.float64).T
+        else:
+            xyz = np.meshgrid(x1arr, x2arr, x3arr)
+            xyz = np.array(
+                [xyz[0].flatten(), xyz[1].flatten(), xyz[2].flatten()], dtype=np.float64
+            ).T
+
+        xyz = np.ascontiguousarray(xyz, dtype=np.float64)
+        self.bs.set_points(xyz)
+
+        return self.bs.B()
+
+    def dBdX_many(self, x1arr, x2arr, x3arr, input1D=True):
+        B = self.B_many(x1arr, x2arr, x3arr, input1D=input1D)
+        return [B], self.bs.dB_by_dX()
+
 
 ### Stellerator configurations ###
 
@@ -81,9 +99,11 @@ def ncsx():
     """Get the NCSX stellarator configuration."""
     return stellarator(*get_ncsx_data(), nfp=3)
 
+
 def w7x():
     """Get the W7-X stellarator configuration."""
     return stellarator(*get_w7x_data(), nfp=5, surface_radius=2)
+
 
 def stellarator(curves, currents, ma, nfp, **kwargs):
     """Set up a stellarator configuration and returns the magnetic field and the interpolated magnetic field as well as coils and the magnetic axis.
@@ -105,7 +125,14 @@ def stellarator(curves, currents, ma, nfp, **kwargs):
     Returns:
         tuple: (Biot-Savart object, InterpolatedField object, (nfp, coils, ma, sc_fieldline))
     """
-    options = {"degree": 2, "surface_radius": 0.7, "n": 20, "mpol": 5, "ntor": 5, "stellsym": True}
+    options = {
+        "degree": 2,
+        "surface_radius": 0.7,
+        "n": 20,
+        "mpol": 5,
+        "ntor": 5,
+        "stellsym": True,
+    }
     options.update(kwargs)
 
     # Load the NCSX data and create the coils
@@ -125,7 +152,7 @@ def stellarator(curves, currents, ma, nfp, **kwargs):
         nphi=64,
         ntheta=24,
     )
-    s.fit_to_curve(ma, options['surface_radius'], flip_theta=False)
+    s.fit_to_curve(ma, options["surface_radius"], flip_theta=False)
     sc_fieldline = SurfaceClassifier(s, h=0.03, p=2)
 
     # Bounds for the interpolated magnetic field chosen so that the surface is
@@ -214,8 +241,20 @@ def trace(bs, tf, xx, **kwargs):
 
 ### Different ways to draw a Poincare plot ###
 
-def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=False, aspect='equal', dpi=300, xlims=None, 
-                       ylims=None, surf=None, s=2, marker='o'):
+
+def plot_poincare_data(
+    fieldlines_phi_hits,
+    phis,
+    filename=None,
+    mark_lost=False,
+    aspect="equal",
+    dpi=300,
+    xlims=None,
+    ylims=None,
+    surf=None,
+    s=2,
+    marker="o",
+):
     """
     Create a poincare plot. Usage:
 
@@ -230,6 +269,7 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
 
     """
     from math import ceil, sqrt
+
     nrowcol = ceil(sqrt(len(phis)))
     plt.figure()
     fig, axs = plt.subplots(nrowcol, nrowcol, figsize=(8, 5))
@@ -239,12 +279,16 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
         ax.set_aspect(aspect)
     color = None
     for i in range(len(phis)):
-        row = i//nrowcol
+        row = i // nrowcol
         col = i % nrowcol
         if i != len(phis) - 1:
-            axs[row, col].set_title(f"$\\phi = {phis[i]/np.pi:.2f}\\pi$ ", loc='left', y=0.0)
+            axs[row, col].set_title(
+                f"$\\phi = {phis[i]/np.pi:.2f}\\pi$ ", loc="left", y=0.0
+            )
         else:
-            axs[row, col].set_title(f"$\\phi = {phis[i]/np.pi:.2f}\\pi$ ", loc='right', y=0.0)
+            axs[row, col].set_title(
+                f"$\\phi = {phis[i]/np.pi:.2f}\\pi$ ", loc="right", y=0.0
+            )
         if row == nrowcol - 1:
             axs[row, col].set_xlabel("$r$")
         if col == 0:
@@ -258,14 +302,18 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
         for j in range(len(fieldlines_phi_hits)):
             lost = fieldlines_phi_hits[j][-1, 1] < 0
             if mark_lost:
-                color = 'r' if lost else 'g'
-            data_this_phi = fieldlines_phi_hits[j][np.where(fieldlines_phi_hits[j][:, 1] == i)[0], :]
+                color = "r" if lost else "g"
+            data_this_phi = fieldlines_phi_hits[j][
+                np.where(fieldlines_phi_hits[j][:, 1] == i)[0], :
+            ]
             if data_this_phi.size == 0:
                 continue
-            r = np.sqrt(data_this_phi[:, 2]**2+data_this_phi[:, 3]**2)
-            axs[row, col].scatter(r, data_this_phi[:, 4], marker=marker, s=s, linewidths=0, c=color)
+            r = np.sqrt(data_this_phi[:, 2] ** 2 + data_this_phi[:, 3] ** 2)
+            axs[row, col].scatter(
+                r, data_this_phi[:, 4], marker=marker, s=s, linewidths=0, c=color
+            )
 
-        plt.rc('axes', axisbelow=True)
+        plt.rc("axes", axisbelow=True)
         axs[row, col].grid(True, linewidth=0.5)
 
         # if passed a surface, plot the plasma surface outline
@@ -273,7 +321,7 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
             cross_section = surf.cross_section(phi=phis[i])
             r_interp = np.sqrt(cross_section[:, 0] ** 2 + cross_section[:, 1] ** 2)
             z_interp = cross_section[:, 2]
-            axs[row, col].plot(r_interp, z_interp, linewidth=1, c='k')
+            axs[row, col].plot(r_interp, z_interp, linewidth=1, c="k")
 
     plt.tight_layout()
     if filename is not None:
@@ -281,9 +329,13 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename = None, mark_lost=Fal
     return fig, axs
 
 
-def poincare(bs, RZstart, phis, sc_fieldline=None, engine = "simsopt", plot = True, **kwargs):
+def poincare(
+    bs, RZstart, phis, sc_fieldline=None, engine="simsopt", plot=True, **kwargs
+):
     if engine == "simsopt":
-        fieldlines_tys, fieldlines_phi_hits = poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs)
+        fieldlines_tys, fieldlines_phi_hits = poincare_simsopt(
+            bs, RZstart, phis, sc_fieldline, **kwargs
+        )
     elif engine == "scipy":
         fieldlines_tys, fieldlines_phi_hits = poincare_ivp(bs, RZstart, phis, **kwargs)
 
@@ -292,6 +344,7 @@ def poincare(bs, RZstart, phis, sc_fieldline=None, engine = "simsopt", plot = Tr
         return fieldlines_tys, fieldlines_phi_hits, fig, ax
 
     return fieldlines_tys, fieldlines_phi_hits
+
 
 def poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs):
     options = {"tmax": 40000, "tol": 1e-7, "comm": None}
@@ -323,7 +376,9 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 
     def Bfield_2D(t, rzs):
         rzs = rzs.reshape((-1, 2))
-        rphizs = np.ascontiguousarray(np.hstack((rzs[:, 0], phis[0]*np.ones(rzs.shape[0]), rzs[:, 1])))
+        rphizs = np.ascontiguousarray(
+            np.hstack((rzs[:, 0], phis[0] * np.ones(rzs.shape[0]), rzs[:, 1]))
+        )
         bs.set_points_cyl(rphizs)
         Bs = list()
         for position, B in zip(rphizs, bs.B()):
@@ -331,10 +386,10 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
             Bs.append(np.array([B[0, 0] / B[1, 0], B[2, 0] / B[1, 0]]))
 
         return np.array(Bs).flatten()
-    
+
     out = solve_ivp(
         Bfield_2D,
-        [0, options['tend']],
+        [0, options["tend"]],
         RZstart.flatten(),
         t_eval=phis,
         method=options["method"],
@@ -344,6 +399,7 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 
 
 ### Convergence domain for the X-O point finders ###
+
 
 # Define a function to be executed in parallel
 def compute_fp(i, r, z, ps, iparams, pparams, options):
@@ -358,6 +414,7 @@ def compute_fp(i, r, z, ps, iparams, pparams, options):
         checkonly=options["checkonly"],
     )
     return i, fp_result
+
 
 def convergence_domain(ps, Rw, Zw, **kwargs):
     """Compute where the FixedPoint solver converge to in the R-Z plane. Each point from the meshgrid given by the input Rw and Zw is tested for convergence.
@@ -408,16 +465,25 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
     # set up the point finder
     pparams = {"nrestart": 0, "niter": 30}
     pparams.update(kwargs)
-    
+
     R, Z = np.meshgrid(Rw, Zw)
 
     assigned_to = np.ones(R.size, dtype=int) * -1
     fixed_points = list()
     fp_result_list = list()
-    
+
     # Use a process pool executor to parallelize the loop
     with Pool() as p:
-        fp_result_list = p.map(compute_fp, [enumerate(zip(R.flatten(), Z.flatten())), [ps]*R.size, [iparams]*R.size, [pparams]*R.size, [options]*R.size])
+        fp_result_list = p.map(
+            compute_fp,
+            [
+                enumerate(zip(R.flatten(), Z.flatten())),
+                [ps] * R.size,
+                [iparams] * R.size,
+                [pparams] * R.size,
+                [options] * R.size,
+            ],
+        )
 
     for i, fp_result in fp_result_list:
         if fp_result is not None:
@@ -425,7 +491,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
             assigned = False
             for j, fpt in enumerate(fixed_points):
                 fpt_xyz = np.array([fpt.x[0], fpt.y[0], fpt.z[0]])
-                if np.isclose(fp_result_xyz, fpt_xyz, atol=options['eps']).all():
+                if np.isclose(fp_result_xyz, fpt_xyz, atol=options["eps"]).all():
                     assigned_to[i] = j
                     assigned = True
             if not assigned:
@@ -433,6 +499,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
                 fixed_points.append(fp_result)
 
     return R, Z, assigned_to, fixed_points
+
 
 def plot_convergence_domain(R, Z, assigned_to, fixed_points, ax=None, colors=None):
     """Plot the convergence domain for FixedPoint solver in the R-Z plane. If ax is None, a new figure is created,
@@ -456,7 +523,7 @@ def plot_convergence_domain(R, Z, assigned_to, fixed_points, ax=None, colors=Non
     if colors is None:
         colors = cm.rainbow(np.linspace(0, 1, len(fixed_points) + 1))
         colors[:, 3] = 0.8
-        colors = np.vstack(([0.5,0.5,0.5,0.5], colors))
+        colors = np.vstack(([0.5, 0.5, 0.5, 0.5], colors))
 
     cmap = np.array([colors[j] for j in assigned_to])
     cmap = cmap.reshape(R.shape[0], R.shape[1], cmap.shape[1])
