@@ -431,21 +431,6 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 ### Convergence domain for the X-O point finders ###
 
 
-# Define a function to be executed in parallel
-def compute_fp(i, r, z, ps, iparams, pparams, options):
-    fp = FixedPoint(ps, pparams, integrator_params=iparams)
-    fp_result = fp.compute(
-        guess=[r, z],
-        pp=options["pp"],
-        qq=options["qq"],
-        sbegin=options["sbegin"],
-        send=options["send"],
-        tol=options["tol"],
-        checkonly=options["checkonly"],
-    )
-    return i, fp_result
-
-
 def convergence_domain(ps, Rw, Zw, **kwargs):
     """Compute where the FixedPoint solver converge to in the R-Z plane. Each point from the meshgrid given by the input Rw and Zw is tested for convergence.
     if a point converges, it is assigned a number, otherwise it is assigned -1. The number corresponds to the index of the fixed point in returned list of fixed points.
@@ -498,35 +483,33 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
 
     R, Z = np.meshgrid(Rw, Zw)
 
-    assigned_to = np.ones(R.size, dtype=int) * -1
+    assigned_to = list()
     fixed_points = list()
-    fp_result_list = list()
 
-    # Use a process pool executor to parallelize the loop
-    with Pool() as p:
-        fp_result_list = p.map(
-            compute_fp,
-            [
-                enumerate(zip(R.flatten(), Z.flatten())),
-                [ps] * R.size,
-                [iparams] * R.size,
-                [pparams] * R.size,
-                [options] * R.size,
-            ],
+    for r, z in zip(R.flatten(), Z.flatten()):
+        fp_result = fp.compute(
+            guess=[r, z],
+            pp=options["pp"],
+            qq=options["qq"],
+            sbegin=options["sbegin"],
+            send=options["send"],
+            tol=options["tol"],
+            checkonly=options["checkonly"],
         )
 
-    for i, fp_result in fp_result_list:
         if fp_result is not None:
             fp_result_xyz = np.array([fp_result.x[0], fp_result.y[0], fp_result.z[0]])
             assigned = False
             for j, fpt in enumerate(fixed_points):
                 fpt_xyz = np.array([fpt.x[0], fpt.y[0], fpt.z[0]])
-                if np.isclose(fp_result_xyz, fpt_xyz, atol=options["eps"]).all():
-                    assigned_to[i] = j
+                if np.isclose(fp_result_xyz, fpt_xyz, atol=options['eps']).all():
+                    assigned_to.append(j)
                     assigned = True
             if not assigned:
-                assigned_to[i] = len(fixed_points)
+                assigned_to.append(len(fixed_points))
                 fixed_points.append(fp_result)
+        else:
+            assigned_to.append(-1)
 
     return R, Z, assigned_to, fixed_points
 
