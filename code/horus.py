@@ -379,6 +379,7 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
     record = list()
     last_dist = []
     last_t = 0
+
     def record_crossing(t, xyz):
         current_phis = np.arctan2(xyz[1::3], xyz[::3])
 
@@ -386,25 +387,42 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
         dist = msh_Phi - msh_Plane
 
         if len(last_dist) != 0:
-            switch = np.logical_and(np.sign(last_dist) != np.sign(dist), np.abs(dist) < options['eps'])
+            switch = np.logical_and(
+                np.sign(last_dist) != np.sign(dist), np.abs(dist) < options["eps"]
+            )
             for i, s in enumerate(switch):
                 for j, ss in enumerate(s):
                     if ss:
+
                         def crossing(_, xyz):
                             return np.arctan2(xyz[1], xyz[0]) - phis[i]
+
                         crossing.terminal = True
 
                         def minusbfield(_, xyz):
                             return -bs.B(xyz[::3], xyz[1::3], xyz[2::3]).flatten()
-                        
-                        out = solve_ivp(minusbfield, [0, t-last_t], [xyz[3*j], xyz[3*j+1], xyz[3*j+2]], events=crossing)
-                        record.append([j, phis[i], t-out.t_events[0][0], out.y_events[0].flatten()], method = options['method'])
+
+                        out = solve_ivp(
+                            minusbfield,
+                            [0, t - last_t],
+                            [xyz[3 * j], xyz[3 * j + 1], xyz[3 * j + 2]],
+                            events=crossing,
+                        )
+                        record.append(
+                            [
+                                j,
+                                phis[i],
+                                t - out.t_events[0][0],
+                                out.y_events[0].flatten(),
+                            ],
+                            method=options["method"],
+                        )
 
         last_dist = dist
         last_t = t
 
     # Define the Bfield function that uses a MagneticField from simsopt
-    def Bfield(t, xyz, recording = True):
+    def Bfield(t, xyz, recording=True):
         if recording:
             record_crossing(t, xyz)
         bs.set_points(xyz.reshape((-1, 3)))
@@ -412,12 +430,14 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 
     # Putting (R0Z) coordinates to (xyz) for integration
     if RZstart.shape[1] != 3:
-        RZstart = np.vstack((RZstart[:, 0], np.zeros((RZstart.shape[0])), RZstart[:, 1])).T
+        RZstart = np.vstack(
+            (RZstart[:, 0], np.zeros((RZstart.shape[0])), RZstart[:, 1])
+        ).T
 
     # Integrate the field lines
     solve_ivp(
         Bfield,
-        [0, options['tmax']],
+        [0, options["tmax"]],
         RZstart.flatten(),
         t_eval=[],
         method=options["method"],
@@ -481,9 +501,10 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
     pparams = {"nrestart": 0, "niter": 30}
     pparams.update(kwargs)
 
+    fp = FixedPoint(ps, pparams, integrator_params=iparams)
     R, Z = np.meshgrid(Rw, Zw)
 
-    assigned_to = list()
+    assigned_to = np.ones(R.size, dtype=int) * -1
     fixed_points = list()
 
     for r, z in zip(R.flatten(), Z.flatten()):
@@ -502,7 +523,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
             assigned = False
             for j, fpt in enumerate(fixed_points):
                 fpt_xyz = np.array([fpt.x[0], fpt.y[0], fpt.z[0]])
-                if np.isclose(fp_result_xyz, fpt_xyz, atol=options['eps']).all():
+                if np.isclose(fp_result_xyz, fpt_xyz, atol=options["eps"]).all():
                     assigned_to.append(j)
                     assigned = True
             if not assigned:
@@ -511,7 +532,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
         else:
             assigned_to.append(-1)
 
-    return R, Z, assigned_to, fixed_points
+    return R, Z, np.array(assigned_to), fixed_points
 
 
 def plot_convergence_domain(R, Z, assigned_to, fixed_points, ax=None, colors=None):
@@ -531,7 +552,7 @@ def plot_convergence_domain(R, Z, assigned_to, fixed_points, ax=None, colors=Non
         tuple: (fig, ax)
     """
 
-    assigned_to = np.array(assigned_to) + 1
+    assigned_to = assigned_to + 1
 
     if colors is None:
         colors = cm.rainbow(np.linspace(0, 1, len(fixed_points) + 1))
