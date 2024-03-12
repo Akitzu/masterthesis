@@ -17,12 +17,16 @@ import horus as ho
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Convergence domain for GYM000-1750")
 
+    # R = np.linspace(5.4, 6.26, 44)
+    # Z = np.linspace(-1, 1, 101)
+    R = np.linspace(5.4, 6.26, 3)
+    Z = np.linspace(-1, 1, 3)
 
     options = {
         "pp": 3,
         "qq": 7,
-        "sbegin": 1.2,
-        "send": 1.,
+        "sbegin": 5,
+        "send": 6.5,
         "tol": 1e-8,
         "rtol": 1e-10,
         "checkonly": True,
@@ -40,9 +44,6 @@ if __name__ == '__main__':
 
     # Compute the convergence domain
     ps = ho.SimsoptBfieldProblem(ma.gamma()[0, 0], 0, 5, bs)
-    
-    R = np.linspace(1.2, 1.8, 31)
-    Z = np.linspace(-0.6, 0.6, 61)
 
     # Initialize MPI
     comm = MPI.COMM_WORLD
@@ -54,18 +55,22 @@ if __name__ == '__main__':
     Z_split = np.array_split(Z, size)[rank]
 
     # Perform the calculation for this process's subset of R and Z
-    convdom_checkonly_local = ho.convergence_domain(ps, R_split, Z_split)
+    convdom_checkonly_local = ho.convergence_domain(ps, R_split, Z_split, *options)
 
     # Gather the results to the root process
     convdom_checkonly = comm.gather(convdom_checkonly_local, root=0)
 
     # The root process saves the result
     if rank == 0:
-        # Flatten the list of results
-        convdom_checkonly = np.concatenate(convdom_checkonly)
+        # Concatenate the list of results
+
+        convdom_checkonly_joined = convdom_checkonly[0]
+        convdom_checkonly = convdom_checkonly[1:]
+        for convdom in convdom_checkonly:
+            convdom_checkonly_joined = ho.join_convergence_domains(convdom_checkonly_joined, convdom)
 
         # Save the result
         date = datetime.datetime.now().strftime("%Y%m%d")
         dumpname = f"convergence_domain_GYM000-1750_{date}.pkl"
         with open(os.path.join('..', 'output', dumpname), 'wb') as f:
-            pickle.dump(convdom_checkonly, f)
+            pickle.dump(convdom_checkonly_joined, f)

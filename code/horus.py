@@ -451,6 +451,32 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 ### Convergence domain for the X-O point finders ###
 
 
+def join_convergence_domains(convdomA, convdomB, eps=1e-4):
+    """Join two convergence domain results, returning a new tuple with the same format."""
+    assignedB = convdomB[2].copy()
+    fplistA = convdomA[3].copy()
+
+    for i, fp in enumerate(convdomB[3]):
+        fp_xyz = np.array([fp.x[0], fp.y[0], fp.z[0]])
+        found_prev = False
+        for j, fp_prev in enumerate(convdomA[3]):
+            fp_prev_xyz = np.array([fp_prev.x[0], fp_prev.y[0], fp_prev.z[0]])
+            if np.isclose(fp_xyz, fp_prev_xyz, atol=eps).all():
+                assignedB[assignedB == j] = i
+                found_prev = True
+                break
+        if not found_prev:
+            assignedB[assignedB == i] = len(fplistA)
+            fplistA.append(fp)
+
+    return (
+        np.concatenate((convdomA[0], convdomB[0])),
+        np.concatenate((convdomA[1], convdomB[1])),
+        np.concatenate((convdomA[2], assignedB)),
+        fplistA,
+    )
+
+
 def convergence_domain(ps, Rw, Zw, **kwargs):
     """Compute where the FixedPoint solver converge to in the R-Z plane. Each point from the meshgrid given by the input Rw and Zw is tested for convergence.
     if a point converges, it is assigned a number, otherwise it is assigned -1. The number corresponds to the index of the fixed point in returned list of fixed points.
