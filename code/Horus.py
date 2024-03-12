@@ -114,7 +114,7 @@ def stellarator(curves, currents, ma, nfp, **kwargs):
         ma (simsopt.CurveRZFourier): magnetic axis
         nfp (int): number of field periods
 
-
+    Keyword Args:
         degree (int): degree of the interpolating polynomial
         n (int): number of points in the radial direction
         mpol (int): number of poloidal modes
@@ -239,7 +239,7 @@ def trace(bs, tf, xx, **kwargs):
     return out.y
 
 
-### Different ways to draw a Poincare plot ###
+### Drawing of a Poincare section ###
 
 
 def plot_poincare_data(
@@ -369,33 +369,63 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
         "rtol": 1e-10,
         "atol": 1e-10,
         "t_eval": None,
-        "steps": int(1000),
+        "tmax": 100,
         "method": "DOP853",
+        "eps": 1e-1,
     }
     options.update(kwargs)
 
-    def Bfield_2D(t, rzs):
-        rzs = rzs.reshape((-1, 2))
-        rphizs = np.ascontiguousarray(
-            np.hstack((rzs[:, 0], phis[0] * np.ones(rzs.shape[0]), rzs[:, 1]))
-        )
-        bs.set_points_cyl(rphizs)
-        Bs = list()
-        for position, B in zip(rphizs, bs.B()):
-            B = carttocyl(*position) @ B.reshape(3, -1)
-            Bs.append(np.array([B[0, 0] / B[1, 0], B[2, 0] / B[1, 0]]))
+    # Recording function for the crossing of the planes
+    record = list()
+    last_dist = []
+    last_t = 0
+    def record_crossing(t, xyz):
+        current_phis = np.arctan2(xyz[1::3], xyz[::3])
 
-        return np.array(Bs).flatten()
+        msh_Phi, msh_Plane = np.meshgrid(current_phis, phis)
+        dist = msh_Phi - msh_Plane
 
-    out = solve_ivp(
-        Bfield_2D,
-        [0, options["tend"]],
+        if len(last_dist) != 0:
+            switch = np.logical_and(np.sign(last_dist) != np.sign(dist), np.abs(dist) < options['eps'])
+            for i, s in enumerate(switch):
+                for j, ss in enumerate(s):
+                    if ss:
+                        def crossing(_, xyz):
+                            return np.arctan2(xyz[1], xyz[0]) - phis[i]
+                        crossing.terminal = True
+
+                        def minusbfield(_, xyz):
+                            return -bs.B(xyz[::3], xyz[1::3], xyz[2::3]).flatten()
+                        
+                        out = solve_ivp(minusbfield, [0, t-last_t], [xyz[3*j], xyz[3*j+1], xyz[3*j+2]], events=crossing)
+                        record.append([j, phis[i], t-out.t_events[0][0], out.y_events[0].flatten()], method = options['method'])
+
+        last_dist = dist
+        last_t = t
+
+    # Define the Bfield function that uses a MagneticField from simsopt
+    def Bfield(t, xyz, recording = True):
+        if recording:
+            record_crossing(t, xyz)
+        bs.set_points(xyz.reshape((-1, 3)))
+        return bs.B().flatten()
+
+    # Putting (R0Z) coordinates to (xyz) for integration
+    if RZstart.shape[1] != 3:
+        RZstart = np.vstack((RZstart[:, 0], np.zeros((RZstart.shape[0])), RZstart[:, 1])).T
+
+    # Integrate the field lines
+    solve_ivp(
+        Bfield,
+        [0, options['tmax']],
         RZstart.flatten(),
-        t_eval=phis,
+        t_eval=[],
         method=options["method"],
         rtol=options["rtol"],
         atol=options["atol"],
     )
+
+    return record
 
 
 ### Convergence domain for the X-O point finders ###
