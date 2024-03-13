@@ -11,7 +11,6 @@ from simsopt.field import (
     compute_fieldlines,
     LevelsetStoppingCriterion,
 )
-from simsopt.util import comm_world
 from simsopt.geo import SurfaceRZFourier
 
 from pyoculus.problems import CartesianBfield
@@ -530,7 +529,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
     fp = FixedPoint(ps, pparams, integrator_params=iparams)
     R, Z = np.meshgrid(Rw, Zw)
 
-    assigned_to = np.ones(R.size, dtype=int) * -1
+    assigned_to = list()
     fixed_points = list()
 
     for r, z in zip(R.flatten(), Z.flatten()):
