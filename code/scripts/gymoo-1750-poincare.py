@@ -1,6 +1,6 @@
 from simsopt.configs import get_w7x_data
 from simsopt.field import Current
-from simsopt.util import comm_world
+from simsopt.util import comm_world, proc0_print
 import numpy as np
 import datetime
 import pickle
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     Rs, Zs = np.meshgrid(Rs, Zs)
     RZs2 = np.array([[r, z] for r, z in zip(Rs.flatten(), Zs.flatten())])
 
-    RZs = np.concatenate((RZs, RZs2))
+    RZs = np.concatenate((RZs, RZs2))   
 
     # Current configuration
     currents = [Current(1.109484) * 1e6 for _ in range(5)]
@@ -47,13 +47,22 @@ if __name__ == '__main__':
 
     bs, bsh, (nfp, coils, ma, sc_fieldline) = ho.stellarator(w7x[0], currents, w7x[2], nfp=5, surface_radius=2)
 
+    proc0_print("Configuration loaded. Computing Poincare plot...")
+
+    # Compute the Poincare plot
     _, _, fig, ax = ho.poincare(bsh, RZs, args.phis, sc_fieldline, tol = args.tol, comm = comm_world)
 
+    proc0_print("Poincare plot computed. Saving...")
+
+    # Save the plot
     if comm_world is None or comm_world.rank == 0:
         for col in ax[0,0].collections:
             col.set_color('black')
             col.set_sizes([0.5])
 
-        date = datetime.datetime.now().strftime("%Y%m%d")
+        date = datetime.datetime.now().strftime("%d%m%Y_%H%M")
         dumpname = f"poincare_GYM000-1750_{date}.pkl"
-        pickle.dump(fig, open(os.path.join(ROOT_DIR, "/output/", dumpname), "wb"))
+        with open(os.path.join(ROOT_DIR, "output/", dumpname), 'wb') as f:
+                    pickle.dump(fig, f)
+
+    proc0_print("Poincare plot saved.")
