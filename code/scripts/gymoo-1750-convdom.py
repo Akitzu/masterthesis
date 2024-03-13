@@ -55,7 +55,7 @@ if __name__ == '__main__':
     Z_split = np.array_split(Z, size)[rank]
 
     # Perform the calculation for this process's subset of R and Z
-    convdom_checkonly_local = ho.convergence_domain(ps, R_split, Z_split, *options)
+    convdom_checkonly_local = ho.convergence_domain(ps, R_split, Z_split, **options)
 
     # Gather the results to the root process
     convdom_checkonly = comm.gather(convdom_checkonly_local, root=0)
