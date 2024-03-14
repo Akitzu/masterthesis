@@ -16,17 +16,18 @@ import horus as ho
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser(description="Poincare for GYM000-1750")
-    args.add_argument(
+    parser = argparse.ArgumentParser(description="Poincare for GYM000-1750")
+    parser.add_argument(
         "-phis",
         nargs="+",
         type=float,
         default=[0],
         help="Phi coordinates for the Poincare plot",
     )
-    args.add_argument(
+    parser.add_argument(
         "-tol", type=float, default=1e-10, help="Tolerance for the Poincare plot"
     )
+    args = parser.parse_args()
     # parser.add_argument("-r", nargs='+', type=float, help="R coordinates for the Poincare plot")
     # parser.add_argument("-z", nargs='+', type=float, help="Z coordinates for the Poincare plot")
 
@@ -61,14 +62,16 @@ if __name__ == "__main__":
     RZs = np.concatenate((RZs, RZs2))
 
     # Compute the Poincare plot
-    _, _, fig, ax = ho.poincare(
-        bsh, RZs, args.phis, sc_fieldline, tol=args.tol, comm=comm_world
+    fieldlines_tys, fieldlines_phi_hits = ho.poincare(
+        bsh, RZs, args.phis, sc_fieldline, tol=args.tol, comm=comm_world, plot=False
     )
 
     proc0_print("Poincare plot computed. Saving...")
 
     # Save the plot
     if comm_world is None or comm_world.rank == 0:
+        fig, ax = ho.plot_poincare_data(fieldlines_phi_hits, args.phis)
+
         for col in ax[0, 0].collections:
             col.set_color("black")
             col.set_sizes([0.5])
