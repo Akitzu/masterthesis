@@ -446,6 +446,57 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 
     return record
 
+def inv_Jacobian(R, phi, _):
+    return np.array([
+            [np.cos(phi), np.sin(phi), 0], 
+            [-np.sin(phi)/R, np.cos(phi)/R, 0], 
+            [0,0,1]
+        ])
+
+def poincare_ivp_2d(bs, RZstart, phis, **kwargs):
+    options = {
+        "rtol": 1e-7,
+        "atol": 1e-8,
+        "nintersect": 10,
+        "method": "DOP853",
+        "nfp": 1,
+        "mpol": 1,
+    }
+    options.update(kwargs)
+
+    def Bfield_2D(t, rzs):
+        rzs = rzs.reshape((-1, 2))
+        rphizs = np.ascontiguousarray(np.vstack((rzs[:, 0], (t % (2*np.pi))*np.ones(rzs.shape[0]), rzs[:, 1])).T)
+        bs.set_points_cyl(rphizs)
+        bs_Bs = bs.B()
+
+        Bs = list()
+        for position, B in zip(rphizs, bs_Bs):
+            B = inv_Jacobian(*position) @ B.reshape(3, -1)
+            Bs.append(np.array([B[0, 0] / B[1, 0], B[2, 0] / B[1, 0]]))
+
+        return np.array(Bs).flatten()
+    
+    # setup the phis of the poincare sections
+    phis = np.unique(np.mod(phis, 2*np.pi/options['nfp']))
+    phis.sort()
+
+    # setup the evaluation points for those sections
+    phi_evals = np.array([phis+options['mpol']*2*np.pi*i/options['nfp'] for i in range(options['nintersect']+1)])
+
+    #print(phi_evals[-1,-1])
+    out = solve_ivp(
+        Bfield_2D,
+        [0, phi_evals[-1,-1]],
+        RZstart.flatten(),
+        t_eval=phi_evals.flatten(),
+        method=options["method"],
+        atol=options["atol"],
+        rtol=options["rtol"],
+    )
+
+    return out
+
 
 ### Convergence domain for the X-O point finders ###
 
