@@ -21,7 +21,7 @@ print("rank: {}, local_flat_data: {}".format(rank, flat_data))
 print("rank: {}, sizes: {}".format(rank, sizes))
 
 # Gather the sizes on each process
-all_sizes = comm.gather(sizes, root=0)
+all_sizes = comm.gather(sizes)
 
 print("rank: {}, all_sizes: {}".format(rank, all_sizes))
 
