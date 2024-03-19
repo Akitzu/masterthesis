@@ -1,6 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from scipy.integrate import solve_ivp
+from scipy.optimize import toms748
 from simsopt.configs import get_ncsx_data, get_w7x_data
 from simsopt.field import (
     MagneticField,
@@ -21,21 +22,20 @@ from matplotlib import cm
 
 ### Helper functions for Horus ###
 
+# def cyltocart(r, theta, z):
+#     return np.array(
+#         [
+#             [np.cos(theta), -np.sin(theta), 0],
+#             [-r * np.sin(theta), -r * np.cos(theta), 0],
+#             [0, 0, 1],
+#         ]
+#     )
 
-def cyltocart(r, theta, z):
-    return np.array(
-        [
-            [np.cos(theta), -np.sin(theta), 0],
-            [-r * np.sin(theta), -r * np.cos(theta), 0],
-            [0, 0, 1],
-        ]
-    )
 
-
-def carttocyl(x, y, z):
-    r = np.sqrt(x**2 + y**2)
-    theta = np.arctan2(y, x)
-    return np.linalg.inv(cyltocart(r, theta, z))
+# def carttocyl(x, y, z):
+#     r = np.sqrt(x**2 + y**2)
+#     theta = np.arctan2(y, x)
+#     return np.linalg.inv(cyltocart(r, theta, z))
 
 
 def normalize(v: np.ndarray) -> np.ndarray:
@@ -240,6 +240,28 @@ def trace(bs, tf, xx, **kwargs):
 
 ### Drawing of a Poincare section ###
 
+class PoincarePlanes():
+
+    @classmethod
+    def from_ivp(cls, out):
+        cls.out = out
+
+    @classmethod
+    def from_simsopt(cls, fieldlines_tys, fieldlines_phi_hits):
+        cls.tys = fieldlines_tys
+        cls.phi_hits = fieldlines_phi_hits
+
+    @classmethod
+    def from_record(cls, record):
+        cls.record = record
+
+    @property
+    def hits(self):
+        if hasattr(self, "out"):
+            return self.out
+        elif hasattr(self, "phi_hits"):
+            return self.phi_hits
+
 
 def plot_poincare_data(
     fieldlines_phi_hits,
@@ -335,14 +357,19 @@ def poincare(
         fieldlines_tys, fieldlines_phi_hits = poincare_simsopt(
             bs, RZstart, phis, sc_fieldline, **kwargs
         )
+        pplane = PoincarePlanes.from_simsopt(fieldlines_tys, fieldlines_phi_hits)
+    elif engine == "scipy-2d":
+        out = poincare_ivp_2d(bs, RZstart, phis, **kwargs)
+        pplane = PoincarePlanes.from_ivp(out)
     elif engine == "scipy":
-        fieldlines_tys, fieldlines_phi_hits = poincare_ivp(bs, RZstart, phis, **kwargs)
+        record = poincare_ivp(bs, RZstart, phis, **kwargs)
+        pplane = PoincarePlanes.from_record(record)
 
     if plot:
-        fig, ax = plot_poincare_data(fieldlines_phi_hits, phis)
+        fig, ax = pplane.plot()
         return fieldlines_tys, fieldlines_phi_hits, fig, ax
 
-    return fieldlines_tys, fieldlines_phi_hits
+    return pplane
 
 
 def poincare_simsopt(bs, RZstart, phis, sc_fieldline, **kwargs):
@@ -395,7 +422,7 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
 
                         def crossing(_, xyz):
                             return np.arctan2(xyz[1], xyz[0]) - phis[i]
-
+                        
                         crossing.terminal = True
 
                         def minusbfield(_, xyz):
@@ -406,6 +433,7 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
                             [0, t - last_t],
                             [xyz[3 * j], xyz[3 * j + 1], xyz[3 * j + 2]],
                             events=crossing,
+                            method=options["method"]
                         )
                         record.append(
                             [
@@ -413,8 +441,7 @@ def poincare_ivp(bs, RZstart, phis, **kwargs):
                                 phis[i],
                                 t - out.t_events[0][0],
                                 out.y_events[0].flatten(),
-                            ],
-                            method=options["method"],
+                            ]
                         )
 
         last_dist = dist
