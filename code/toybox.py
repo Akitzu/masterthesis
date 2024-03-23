@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit
+from numba import njit
 import functools
 
 ## Usefull decorators
@@ -24,18 +24,17 @@ def arraytize(f, shape="vector"):
 ## Equilibrium field
 
 
+@njit
 def equ_squared(rr, R, sf, shear):
     return np.array(
         [
-            [-2 * rr[2] / rr[0]],
-            [
-                (2 * sf + 2 * shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
-                * np.sqrt(R**2 - rr[2] ** 2 - (R - rr[0]) ** 2)
-                / rr[0]
-            ],
-            [(-2 * R + 2 * rr[0]) / rr[0]],
+            -2 * rr[2] / rr[0],
+            (2 * sf + 2 * shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
+            * np.sqrt(R**2 - rr[2] ** 2 - (R - rr[0]) ** 2)
+            / rr[0],
+            (-2 * R + 2 * rr[0]) / rr[0],
         ]
-    ).squeeze()
+    )
 
 
 def equ_squared_dBdX(rr, R, sf, shear):
@@ -77,102 +76,86 @@ def equ_squared_dBdX(rr, R, sf, shear):
 ## Perturbation field
 
 
+@njit
 def pert_maxwellboltzmann(rr, R, d, m, n):
     return np.array(
         [
-            [
-                np.sqrt(2)
+            np.sqrt(2)
+            * (
+                d**2
                 * (
-                    d**2
-                    * (
-                        m
-                        * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.imag(
-                            (-R + rr[0] + 1j * rr[2]) ** (m - 1)
-                            * np.exp(1j * n * rr[1])
-                        )
-                        - 2
-                        * rr[2]
-                        * np.real(
-                            (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
-                        )
-                    )
-                    + rr[2]
+                    m
                     * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                    * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
-                )
-                * np.exp(
-                    (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
-                )
-                / (np.sqrt(np.pi) * d**5 * rr[0])
-            ],
-            [0],
-            [
-                np.sqrt(2)
-                * (
-                    d**2
-                    * (
-                        m
-                        * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.real(
-                            (-R + rr[0] + 1j * rr[2]) ** (m - 1)
-                            * np.exp(1j * n * rr[1])
-                        )
-                        - 2
-                        * (R - rr[0])
-                        * np.real(
-                            (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
-                        )
-                    )
-                    + (R - rr[0])
-                    * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                    * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
-                )
-                * np.exp(
-                    (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
-                )
-                / (np.sqrt(np.pi) * d**5 * rr[0])
-            ],
-        ]
-    ).squeeze()
-
-
-def pert_gaussian(rr, R, d, m, n):
-    return np.array(
-        [
-            [
-                np.sqrt(2)
-                * (
-                    d**2
-                    * m
                     * np.imag(
                         (-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1])
                     )
-                    + rr[2]
+                    - 2
+                    * rr[2]
                     * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                 )
-                * np.exp(
-                    (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
-                )
-                / (2 * np.sqrt(np.pi) * d**3 * rr[0])
-            ],
-            [0],
-            [
-                np.sqrt(2)
+                + rr[2]
+                * (rr[2] ** 2 + (R - rr[0]) ** 2)
+                * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+            )
+            * np.exp(
+                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+            )
+            / (np.sqrt(np.pi) * d**5 * rr[0]),
+            0,
+            np.sqrt(2)
+            * (
+                d**2
                 * (
-                    d**2
-                    * m
+                    m
+                    * (rr[2] ** 2 + (R - rr[0]) ** 2)
                     * np.real(
                         (-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1])
                     )
-                    + (R - rr[0])
+                    - 2
+                    * (R - rr[0])
                     * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                 )
-                * np.exp(
-                    (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
-                )
-                / (2 * np.sqrt(np.pi) * d**3 * rr[0])
-            ],
+                + (R - rr[0])
+                * (rr[2] ** 2 + (R - rr[0]) ** 2)
+                * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+            )
+            * np.exp(
+                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+            )
+            / (np.sqrt(np.pi) * d**5 * rr[0]),
+        ]
+    )
+
+
+@njit
+def pert_gaussian(rr, R, d, m, n):
+    return np.array(
+        [
+            np.sqrt(2)
+            * (
+                d**2
+                * m
+                * np.imag((-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1]))
+                + rr[2]
+                * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+            )
+            * np.exp(
+                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+            )
+            / (2 * np.sqrt(np.pi) * d**3 * rr[0]),
+            0,
+            np.sqrt(2)
+            * (
+                d**2
+                * m
+                * np.real((-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1]))
+                + (R - rr[0])
+                * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+            )
+            * np.exp(
+                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+            )
+            / (2 * np.sqrt(np.pi) * d**3 * rr[0]),
         ]
     ).squeeze()
 
