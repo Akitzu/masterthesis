@@ -2,7 +2,7 @@ import numpy as np
 from numba import jit
 
 
-def equ_squared(rr, shear, sf, R):
+def equ_squared(rr, R, sf, shear):
     return np.array(
         [
             [-2 * rr[2] / rr[0]],
@@ -116,7 +116,7 @@ def pert_gaussian(rr, R, d, m, n):
     ).squeeze()
 
 
-def equ_squared_dBdX(rr, shear, sf, R):
+def equ_squared_dBdX(rr, R, sf, shear):
     return np.array(
         [
             [2 * rr[2] / rr[0] ** 2, 0, -2 / rr[0]],
