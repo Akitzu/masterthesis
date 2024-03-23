@@ -157,7 +157,7 @@ def pert_gaussian(rr, R, d, m, n):
             )
             / (2 * np.sqrt(np.pi) * d**3 * rr[0]),
         ]
-    ).squeeze()
+    )
 
 
 def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
