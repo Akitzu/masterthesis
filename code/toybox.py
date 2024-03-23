@@ -1,5 +1,27 @@
 import numpy as np
 from numba import jit
+import functools
+
+## Usefull decorators
+
+
+def arraytize(f, shape="vector"):
+    if shape == "vector":
+
+        @functools.wraps(f)
+        def wrapper(x):
+            return np.array([f(xi) for xi in x])
+
+    elif shape == "list":
+
+        @functools.wraps(f)
+        def wrapper(x):
+            return np.array([f([x[0][i], x[1][i], x[2][i]]) for i in range(len(x[0]))])
+
+    return wrapper
+
+
+## Equilibrium field
 
 
 def equ_squared(rr, R, sf, shear):
@@ -14,6 +36,45 @@ def equ_squared(rr, R, sf, shear):
             [(-2 * R + 2 * rr[0]) / rr[0]],
         ]
     ).squeeze()
+
+
+def equ_squared_dBdX(rr, R, sf, shear):
+    return np.array(
+        [
+            [2 * rr[2] / rr[0] ** 2, 0, -2 / rr[0]],
+            [
+                2
+                * (
+                    2
+                    * rr[0]
+                    * shear
+                    * (R - rr[0])
+                    * (-(R**2) + rr[2] ** 2 + (R - rr[0]) ** 2)
+                    + rr[0]
+                    * (R - rr[0])
+                    * (sf + shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
+                    + (sf + shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
+                    * (-(R**2) + rr[2] ** 2 + (R - rr[0]) ** 2)
+                )
+                / (rr[0] ** 2 * np.sqrt(R**2 - rr[2] ** 2 - (R - rr[0]) ** 2)),
+                0,
+                2
+                * rr[2]
+                * (
+                    -(R**2) * shear
+                    + 6 * R * rr[0] * shear
+                    - 3 * rr[0] ** 2 * shear
+                    - 3 * rr[2] ** 2 * shear
+                    - sf
+                )
+                / (rr[0] * np.sqrt(2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2)),
+            ],
+            [2 * R / rr[0] ** 2, 0, 0],
+        ]
+    )
+
+
+## Perturbation field
 
 
 def pert_maxwellboltzmann(rr, R, d, m, n):
@@ -114,42 +175,6 @@ def pert_gaussian(rr, R, d, m, n):
             ],
         ]
     ).squeeze()
-
-
-def equ_squared_dBdX(rr, R, sf, shear):
-    return np.array(
-        [
-            [2 * rr[2] / rr[0] ** 2, 0, -2 / rr[0]],
-            [
-                2
-                * (
-                    2
-                    * rr[0]
-                    * shear
-                    * (R - rr[0])
-                    * (-(R**2) + rr[2] ** 2 + (R - rr[0]) ** 2)
-                    + rr[0]
-                    * (R - rr[0])
-                    * (sf + shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
-                    + (sf + shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
-                    * (-(R**2) + rr[2] ** 2 + (R - rr[0]) ** 2)
-                )
-                / (rr[0] ** 2 * np.sqrt(R**2 - rr[2] ** 2 - (R - rr[0]) ** 2)),
-                0,
-                2
-                * rr[2]
-                * (
-                    -(R**2) * shear
-                    + 6 * R * rr[0] * shear
-                    - 3 * rr[0] ** 2 * shear
-                    - 3 * rr[2] ** 2 * shear
-                    - sf
-                )
-                / (rr[0] * np.sqrt(2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2)),
-            ],
-            [2 * R / rr[0] ** 2, 0, 0],
-        ]
-    )
 
 
 def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
