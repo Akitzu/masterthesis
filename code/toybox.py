@@ -34,11 +34,11 @@ def pert_maxwellboltzmann(rr, R, d, m, n):
                         )
                         - 2
                         * rr[2]
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     + rr[2]
                     * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                    * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                    * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                 )
                 * np.exp(
                     (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
@@ -53,17 +53,17 @@ def pert_maxwellboltzmann(rr, R, d, m, n):
                     * (
                         m
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
                         - 2
                         * (R - rr[0])
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     + (R - rr[0])
                     * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                    * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                    * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                 )
                 * np.exp(
                     (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
@@ -87,7 +87,7 @@ def pert_gaussian(rr, R, d, m, n):
                         (-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1])
                     )
                     + rr[2]
-                    * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                    * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                 )
                 * np.exp(
                     (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
@@ -100,11 +100,11 @@ def pert_gaussian(rr, R, d, m, n):
                 * (
                     d**2
                     * m
-                    * np.re(
+                    * np.real(
                         (-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1])
                     )
                     + (R - rr[0])
-                    * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                    * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                 )
                 * np.exp(
                     (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
@@ -167,7 +167,7 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         * (
                             2
                             * rr[2]
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                                 * np.exp(1j * n * rr[1])
                             )
@@ -187,14 +187,14 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         - m
                         * rr[2]
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
                         + 2
                         * rr[2]
                         * (R - rr[0])
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     - d**2
                     * (
@@ -208,13 +208,13 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                             )
                             - 2
                             * rr[2]
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         + rr[2]
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     + rr[0]
                     * (R - rr[0])
@@ -229,13 +229,13 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                             )
                             - 2
                             * rr[2]
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         + rr[2]
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -249,7 +249,7 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                     * (
                         m
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
@@ -281,12 +281,12 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                             + m
                             * (m - 1)
                             * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 2)
                                 * np.exp(1j * n * rr[1])
                             )
                             - 2
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
@@ -299,9 +299,9 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         )
                         + 2
                         * rr[2] ** 2
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                         + (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     - rr[2]
                     * (
@@ -315,13 +315,13 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                             )
                             - 2
                             * rr[2]
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         + rr[2]
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -341,34 +341,34 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                             4
                             * m
                             * (R - rr[0])
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                                 * np.exp(1j * n * rr[1])
                             )
                             - m
                             * (m - 1)
                             * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 2)
                                 * np.exp(1j * n * rr[1])
                             )
                             - 2
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         - m
                         * (R - rr[0])
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
                         + 2
                         * (R - rr[0]) ** 2
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                         + (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     - d**2
                     * (
@@ -376,19 +376,19 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         * (
                             m
                             * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                                 * np.exp(1j * n * rr[1])
                             )
                             - 2
                             * (R - rr[0])
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         + (R - rr[0])
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     + rr[0]
                     * (R - rr[0])
@@ -397,19 +397,19 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         * (
                             m
                             * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                                 * np.exp(1j * n * rr[1])
                             )
                             - 2
                             * (R - rr[0])
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         + (R - rr[0])
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -448,7 +448,7 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         * (
                             2
                             * rr[2]
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                                 * np.exp(1j * n * rr[1])
                             )
@@ -475,7 +475,7 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         + 2
                         * rr[2]
                         * (R - rr[0])
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     - rr[2]
                     * (
@@ -483,19 +483,19 @@ def pert_maxwellboltzmann_dBdX(rr, R, d, m, n):
                         * (
                             m
                             * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                                 * np.exp(1j * n * rr[1])
                             )
                             - 2
                             * (R - rr[0])
-                            * np.re(
+                            * np.real(
                                 (-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1])
                             )
                         )
                         + (R - rr[0])
                         * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -525,7 +525,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                             * np.exp(1j * n * rr[1])
                         )
                         + rr[2]
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
@@ -539,7 +539,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                             * np.exp(1j * n * rr[1])
                         )
                         + rr[2]
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     + rr[0]
                     * (R - rr[0])
@@ -551,7 +551,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                             * np.exp(1j * n * rr[1])
                         )
                         + rr[2]
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -563,7 +563,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                 * (
                     d**2
                     * m
-                    * np.re(
+                    * np.real(
                         (-R + rr[0] + 1j * rr[2]) ** (m - 1) * np.exp(1j * n * rr[1])
                     )
                     - rr[2]
@@ -580,7 +580,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                         d**2
                         * m
                         * (m - 1)
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 2)
                             * np.exp(1j * n * rr[1])
                         )
@@ -590,7 +590,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
-                        + np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        + np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     - rr[2]
                     * (
@@ -601,7 +601,7 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                             * np.exp(1j * n * rr[1])
                         )
                         + rr[2]
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -619,40 +619,40 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                         d**2
                         * m
                         * (m - 1)
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 2)
                             * np.exp(1j * n * rr[1])
                         )
                         + m
                         * (R - rr[0])
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
-                        - np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        - np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     - d**2
                     * (
                         d**2
                         * m
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
                         + (R - rr[0])
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                     + rr[0]
                     * (R - rr[0])
                     * (
                         d**2
                         * m
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
                         + (R - rr[0])
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
@@ -695,12 +695,12 @@ def pert_gaussian_dBdX(rr, R, d, m, n):
                     * (
                         d**2
                         * m
-                        * np.re(
+                        * np.real(
                             (-R + rr[0] + 1j * rr[2]) ** (m - 1)
                             * np.exp(1j * n * rr[1])
                         )
                         + (R - rr[0])
-                        * np.re((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
+                        * np.real((-R + rr[0] + 1j * rr[2]) ** m * np.exp(1j * n * rr[1]))
                     )
                 )
                 * np.exp(
