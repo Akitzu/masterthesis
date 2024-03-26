@@ -21,7 +21,7 @@ def arraytize(f, shape="vector"):
     return wrapper
 
 
-class CylindricalAnalyticBfield(CylindricalBfield):
+class AnalyticCylindricalBfield(CylindricalBfield):
     def __init__(
         self,
         B_equilibrium,
