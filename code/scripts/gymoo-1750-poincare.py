@@ -46,12 +46,12 @@ if __name__ == "__main__":
     proc0_print("Configuration loaded. Computing Poincare plot...")
 
     # Setup the lines initial coordinates
-    nfieldlines = 30
+    nfieldlines = 1
     Rs = np.linspace(6.05, 6.2, nfieldlines)
     Zs = [ma.gamma()[0, 2] for _ in range(nfieldlines)]
     RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
-    nfieldlines = 5
+    nfieldlines = 2
     p1 = np.array([5.6144507858315915, -0.8067790944375764])
     p2 = np.array([5.78, -0.6])
     Rs = np.linspace(p1[0], p2[0], nfieldlines)

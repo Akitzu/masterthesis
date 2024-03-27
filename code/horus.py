@@ -261,6 +261,8 @@ class PoincarePlanes():
             return self.out
         elif hasattr(self, "phi_hits"):
             return self.phi_hits
+        elif hasattr(self, "record"):
+            return self.record
 
 
 def plot_poincare_data(
