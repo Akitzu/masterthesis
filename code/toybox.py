@@ -1,4 +1,5 @@
 from pyoculus.problems import CylindricalBfield
+import matplotlib.pyplot as plt
 from functools import partial
 from jax import jit, jacfwd
 import jax.numpy as jnp
@@ -280,7 +281,7 @@ def mb_psi(rr, R=3.0, d=0.1, m=2, n=1):
     )
 
 
-def plot(ps, rw=[2, 5], zw=[-2, 2], nl=[100, 100]):
+def plot_intensities(ps, rw=[2, 5], zw=[-2, 2], nl=[100, 100]):
     fig, axs = plt.subplots(1, 4, figsize=(20, 5))
 
     r = np.linspace(rw[0], rw[1], nl[0])
