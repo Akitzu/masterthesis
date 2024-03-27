@@ -1,6 +1,8 @@
 from pyoculus.problems import CylindricalBfield
 import matplotlib.pyplot as plt
 from functools import partial
+from jax import config
+config.update("jax_enable_x64", True)
 from jax import jit, jacfwd
 import jax.numpy as jnp
 import numpy as np
@@ -130,19 +132,19 @@ class AnalyticCylindricalBfield(CylindricalBfield):
     # BfieldProblem methods implementation
     def B(self, rr):
         B = self.B_equilibrium(rr) + self.B_perturbation(rr)
-        return B.tolist()
+        return np.array(B)
 
     def dBdX(self, rr):
         dBdX = self.dBdX_equilibrium(rr) + self.dBdX_perturbation(rr)
-        return dBdX.tolist()
+        return np.array(dBdX)
 
     def B_many(self, r, phi, z, input1D=True):
-        return jnp.array([self.B([r[i], phi[i], z[i]]) for i in range(len(r))]).tolist()
+        return np.array([self.B([r[i], phi[i], z[i]]) for i in range(len(r))])
 
     def dBdX_many(self, r, phi, z, input1D=True):
-        return jnp.array(
+        return np.array(
             [self.dBdX([r[i], phi[i], z[i]]) for i in range(len(r))]
-        ).tolist()
+        )
 
 
 ## Equilibrium field
@@ -151,7 +153,12 @@ class AnalyticCylindricalBfield(CylindricalBfield):
 @jit
 def equ_squared(rr, R, sf, shear):
     """
-    Returns the B field derived from the psi and F flux functions given by
+    Returns the B field derived from the Psi and F flux functions derived with the fluxes:
+    $$
+        \psi = z^{2} + \left(R - r\right)^{2}
+        F = \left(2 sf + 2 shear \left(z^{2} + \left(R - r\right)^{2}\right)\right) \sqrt{R^{2} - z^{2} - \left(R - r\right)^{2}}
+    $$
+    using the relation B = grad x A, with A_\phi = \psi / r and B_\phi = F / r for an axisymmetric field in cylindrical coordinates.
     """
     return jnp.array(
         [
