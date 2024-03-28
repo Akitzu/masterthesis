@@ -76,7 +76,8 @@ class AnalyticCylindricalBfield(CylindricalBfield):
 
     @amplitudes.setter
     def amplitudes(self, value):
-        self.amplitudes = value
+        for i, pertdic in enumerate(self.perturbations_args):
+            pertdic["amplitude"] = value[i]
         self._initialize_perturbations()
 
     def set_amplitude(self, index, value):
@@ -86,12 +87,13 @@ class AnalyticCylindricalBfield(CylindricalBfield):
 
     def set_perturbation(self, index, perturbation_args):
         self.perturbations_args[index] = perturbation_args
-        self.perturbations_args[index].update({"R": self.R})
+        self.perturbations_args[index].update({"R": self._R0})
         self._initialize_perturbations(index)
 
     def add_perturbation(self, perturbation_args):
         self.perturbations_args.append(perturbation_args)
-        self.perturbations_args[-1].update({"R": self.R})
+        self._perturbations.append(None)
+        self.perturbations_args[-1].update({"R": self._R0})
         self._initialize_perturbations(len(self.perturbations_args) - 1)
 
     def _initialize_perturbations(self, index=None):
@@ -150,7 +152,6 @@ class AnalyticCylindricalBfield(CylindricalBfield):
 ## Equilibrium field
 
 
-@jit
 def equ_squared(rr, R, sf, shear):
     """
     Returns the B field derived from the Psi and F flux functions derived with the fluxes:
@@ -165,7 +166,7 @@ def equ_squared(rr, R, sf, shear):
             -2 * rr[2] / rr[0],
             (2 * sf + 2 * shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
             * jnp.sqrt(R**2 - rr[2] ** 2 - (R - rr[0]) ** 2)
-            / rr[0],
+            / rr[0]**2,
             (-2 * R + 2 * rr[0]) / rr[0],
         ]
     )
@@ -174,7 +175,6 @@ def equ_squared(rr, R, sf, shear):
 ## Perturbation field
 
 
-@jit
 def pert_maxwellboltzmann(rr, R, d, m, n):
     return jnp.array(
         [
@@ -225,7 +225,6 @@ def pert_maxwellboltzmann(rr, R, d, m, n):
     )
 
 
-@jit
 def pert_gaussian(rr, R, d, m, n):
     return jnp.array(
         [
