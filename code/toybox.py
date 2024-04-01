@@ -58,12 +58,29 @@ class AnalyticCylindricalBfield(CylindricalBfield):
         self.shear = shear
 
         # Define the equilibrium field and its gradient
-        self.B_equilibrium = partial(equ_squared, R=R, Z=Z, sf=sf, shear=shear)
-
         if additional_eqargs is not None:
-            self.B_equilibrium = lambda rr: self.B_equilibrium(rr) + jnp.sum(
-                [equ_squared(rr, **args) for args in additional_eqargs], axis=0
+            self.B_equilibrium = lambda rr: equ_squared(
+                rr, R=R, Z=Z, sf=sf, shear=shear
+            ) + jnp.sum(
+                jnp.array(
+                    [
+                        jnp.multiply(
+                            jnp.array(args["amplitudes"]),
+                            equ_squared(
+                                rr,
+                                R=args["R"],
+                                Z=args["Z"],
+                                sf=args["sf"],
+                                shear=args["shear"],
+                            ),
+                        )
+                        for args in additional_eqargs
+                    ]
+                ),
+                axis=0,
             )
+        else:
+            self.B_equilibrium = partial(equ_squared, R=R, Z=Z, sf=sf, shear=shear)
 
         self.dBdX_equilibrium = lambda rr: jacfwd(self.B_equilibrium)(rr)
 
@@ -333,6 +350,7 @@ PERT_TYPES_DICT = {
 
 
 ## Additional plotting functions
+
 
 # psi functions
 def gaussian_psi(rr, R=3.0, d=0.1, m=2, n=1):
