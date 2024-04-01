@@ -2,7 +2,9 @@ from pyoculus.problems import CylindricalBfield
 import matplotlib.pyplot as plt
 from functools import partial
 from jax import config
+
 config.update("jax_enable_x64", True)
+
 from jax import jit, jacfwd
 import jax.numpy as jnp
 import numpy as np
@@ -15,7 +17,6 @@ class AnalyticCylindricalBfield(CylindricalBfield):
         - "gaussian": Normally distributed perturbation
 
     Attributes:
-        R (float): Major radius of the magnetic axis of the equilibrium field
         sf (float): Safety factor on the magnetic axis
         shear (float): Shear factor
         perturbations_args (list): List of dictionaries with the arguments of each perturbation
@@ -38,10 +39,11 @@ class AnalyticCylindricalBfield(CylindricalBfield):
         dBdX_perturbation(rphiz): Gradient of the perturbation field function
     """
 
-    def __init__(self, R, sf, shear, perturbations_args):
+    def __init__(self, R, Z, sf, shear, perturbations_args, additional_eqargs=None):
         """
         Args:
             R (float): Major radius of the magnetic axis of the equilibrium field
+            Z (float): Z coordinate of the magnetic axis of the equilibrium field
             sf (float): Safety factor on the magnetic axis
             shear (float): Shear factor
             perturbations_args (list): List of dictionaries with the arguments of each perturbation
@@ -56,19 +58,25 @@ class AnalyticCylindricalBfield(CylindricalBfield):
         self.shear = shear
 
         # Define the equilibrium field and its gradient
-        self.B_equilibrium = jit(partial(equ_squared, R=R, sf=sf, shear=shear))
-        self.dBdX_equilibrium = jit(lambda rr: jacfwd(self.B_equilibrium)(rr))
+        self.B_equilibrium = partial(equ_squared, R=R, Z=Z, sf=sf, shear=shear)
+
+        if additional_eqargs is not None:
+            self.B_equilibrium = lambda rr: self.B_equilibrium(rr) + jnp.sum(
+                [equ_squared(rr, **args) for args in additional_eqargs], axis=0
+            )
+
+        self.dBdX_equilibrium = lambda rr: jacfwd(self.B_equilibrium)(rr)
 
         # Define the perturbations and the gradient of the resulting field sum
         self._perturbations = [None] * len(perturbations_args)
         for pertdic in perturbations_args:
-            pertdic.update({"R": R})
+            pertdic.update({"R": R, "Z": Z})
 
         self.perturbations_args = perturbations_args
         self._initialize_perturbations()
 
         # Call the CylindricalBfield constructor with (R,Z) of the axis
-        super().__init__(R, 0)
+        super().__init__(R, Z)
 
     @property
     def amplitudes(self):
@@ -87,13 +95,13 @@ class AnalyticCylindricalBfield(CylindricalBfield):
 
     def set_perturbation(self, index, perturbation_args):
         self.perturbations_args[index] = perturbation_args
-        self.perturbations_args[index].update({"R": self._R0})
+        self.perturbations_args[index].update({"R": self._R0, "Z": self._Z0})
         self._initialize_perturbations(index)
 
     def add_perturbation(self, perturbation_args):
         self.perturbations_args.append(perturbation_args)
         self._perturbations.append(None)
-        self.perturbations_args[-1].update({"R": self._R0})
+        self.perturbations_args[-1].update({"R": self._R0, "Z": self._Z0})
         self._initialize_perturbations(len(self.perturbations_args) - 1)
 
     def _initialize_perturbations(self, index=None):
@@ -111,48 +119,56 @@ class AnalyticCylindricalBfield(CylindricalBfield):
                 PERT_TYPES_DICT[self.perturbations_args[i]["type"]], **tmp_args
             )
 
-        self.B_perturbation = jit(
-            lambda rr: jnp.sum(
-                jnp.array(
-                    [
-                        pertdic["amplitude"] * self._perturbations[i](rr)
-                        for i, pertdic in enumerate(self.perturbations_args)
-                    ]
-                ),
-                axis=0,
+        if len(self.perturbations_args) > 0:
+            self.B_perturbation = jit(
+                lambda rr: jnp.sum(
+                    jnp.array(
+                        [
+                            pertdic["amplitude"] * self._perturbations[i](rr)
+                            for i, pertdic in enumerate(self.perturbations_args)
+                        ]
+                    ),
+                    axis=0,
+                )
             )
+        else:
+            self.B_perturbation = lambda rr: jnp.array([0, 0, 0])
+
+        # gradient of the resulting perturbation
+        self.dBdX_perturbation = lambda rr: jacfwd(self.B_perturbation)(rr)
+
+        # Define the total field and its gradient
+        self._B = jit(lambda rr: self.B_equilibrium(rr) + self.B_perturbation(rr))
+        self._dBdX = jit(
+            lambda rr: self.dBdX_equilibrium(rr) + self.dBdX_perturbation(rr)
         )
-        self.dBdX_perturbation = jit(lambda rr: jacfwd(self.B_perturbation)(rr))
 
     @property
     def perturbations(self):
         return [
-            lambda rr: pertdic["amplitude"] * self._perturbations[i](rr)
+            jit(lambda rr: pertdic["amplitude"] * self._perturbations[i](rr))
             for i, pertdic in enumerate(self.perturbations_args)
         ]
 
     # BfieldProblem methods implementation
+
     def B(self, rr):
-        B = self.B_equilibrium(rr) + self.B_perturbation(rr)
-        return np.array(B)
+        return np.array(self._B(rr))
 
     def dBdX(self, rr):
-        dBdX = self.dBdX_equilibrium(rr) + self.dBdX_perturbation(rr)
-        return np.array(dBdX)
+        return np.array(self._dBdX(rr))
 
     def B_many(self, r, phi, z, input1D=True):
-        return np.array([self.B([r[i], phi[i], z[i]]) for i in range(len(r))])
+        return np.array([self._B([r[i], phi[i], z[i]]) for i in range(len(r))])
 
     def dBdX_many(self, r, phi, z, input1D=True):
-        return np.array(
-            [self.dBdX([r[i], phi[i], z[i]]) for i in range(len(r))]
-        )
+        return np.array([self._dBdX([r[i], phi[i], z[i]]) for i in range(len(r))])
 
 
 ## Equilibrium field
 
 
-def equ_squared(rr, R, sf, shear):
+def equ_squared(rr, R, Z, sf, shear):
     """
     Returns the B field derived from the Psi and F flux functions derived with the fluxes:
     $$
@@ -161,12 +177,14 @@ def equ_squared(rr, R, sf, shear):
     $$
     using the relation B = grad x A, with A_\phi = \psi / r and B_\phi = F / r for an axisymmetric field in cylindrical coordinates.
     """
-    return jnp.array(
+    temp = jnp.maximum(R**2 - (R - rr[0]) ** 2 - (Z - rr[2]) ** 2, 0.0)
+    sgn = (1 + jnp.sign(R**2 - (R - rr[0]) ** 2 - (Z - rr[2]) ** 2)) / 2
+    return sgn * jnp.array(
         [
-            -2 * rr[2] / rr[0],
-            (2 * sf + 2 * shear * (rr[2] ** 2 + (R - rr[0]) ** 2))
-            * jnp.sqrt(R**2 - rr[2] ** 2 - (R - rr[0]) ** 2)
-            / rr[0]**2,
+            -(-2 * Z + 2 * rr[2]) / rr[0],
+            (2 * sf + 2 * shear * ((R - rr[0]) ** 2 + (Z - rr[2]) ** 2))
+            * jnp.sqrt(temp)
+            / rr[0] ** 2,
             (-2 * R + 2 * rr[0]) / rr[0],
         ]
     )
@@ -175,7 +193,7 @@ def equ_squared(rr, R, sf, shear):
 ## Perturbation field
 
 
-def pert_maxwellboltzmann(rr, R, d, m, n):
+def pert_maxwellboltzmann(rr, R, Z, d, m, n):
     return jnp.array(
         [
             jnp.sqrt(2)
@@ -183,20 +201,33 @@ def pert_maxwellboltzmann(rr, R, d, m, n):
                 d**2
                 * (
                     m
-                    * (rr[2] ** 2 + (R - rr[0]) ** 2)
+                    * ((R - rr[0]) ** 2 + (Z - rr[2]) ** 2)
                     * jnp.imag(
-                        (-R + rr[0] + 1j * rr[2]) ** (m - 1) * jnp.exp(1j * n * rr[1])
+                        (-R + rr[0] - 1j * (Z - rr[2])) ** (m - 1)
+                        * jnp.exp(1j * n * rr[1])
                     )
-                    - 2
-                    * rr[2]
-                    * jnp.real((-R + rr[0] + 1j * rr[2]) ** m * jnp.exp(1j * n * rr[1]))
+                    + 2
+                    * (Z - rr[2])
+                    * jnp.real(
+                        (-R + rr[0] - 1j * (Z - rr[2])) ** m * jnp.exp(1j * n * rr[1])
+                    )
                 )
-                + rr[2]
-                * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                * jnp.real((-R + rr[0] + 1j * rr[2]) ** m * jnp.exp(1j * n * rr[1]))
+                - (Z - rr[2])
+                * ((R - rr[0]) ** 2 + (Z - rr[2]) ** 2)
+                * jnp.real(
+                    (-R + rr[0] - 1j * (Z - rr[2])) ** m * jnp.exp(1j * n * rr[1])
+                )
             )
             * jnp.exp(
-                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+                (
+                    -(R**2)
+                    + 2 * R * rr[0]
+                    - Z**2
+                    + 2 * Z * rr[2]
+                    - rr[0] ** 2
+                    - rr[2] ** 2
+                )
+                / (2 * d**2)
             )
             / (jnp.sqrt(jnp.pi) * d**5 * rr[0]),
             0,
@@ -205,27 +236,40 @@ def pert_maxwellboltzmann(rr, R, d, m, n):
                 d**2
                 * (
                     m
-                    * (rr[2] ** 2 + (R - rr[0]) ** 2)
+                    * ((R - rr[0]) ** 2 + (Z - rr[2]) ** 2)
                     * jnp.real(
-                        (-R + rr[0] + 1j * rr[2]) ** (m - 1) * jnp.exp(1j * n * rr[1])
+                        (-R + rr[0] - 1j * (Z - rr[2])) ** (m - 1)
+                        * jnp.exp(1j * n * rr[1])
                     )
                     - 2
                     * (R - rr[0])
-                    * jnp.real((-R + rr[0] + 1j * rr[2]) ** m * jnp.exp(1j * n * rr[1]))
+                    * jnp.real(
+                        (-R + rr[0] - 1j * (Z - rr[2])) ** m * jnp.exp(1j * n * rr[1])
+                    )
                 )
                 + (R - rr[0])
-                * (rr[2] ** 2 + (R - rr[0]) ** 2)
-                * jnp.real((-R + rr[0] + 1j * rr[2]) ** m * jnp.exp(1j * n * rr[1]))
+                * ((R - rr[0]) ** 2 + (Z - rr[2]) ** 2)
+                * jnp.real(
+                    (-R + rr[0] - 1j * (Z - rr[2])) ** m * jnp.exp(1j * n * rr[1])
+                )
             )
             * jnp.exp(
-                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+                (
+                    -(R**2)
+                    + 2 * R * rr[0]
+                    - Z**2
+                    + 2 * Z * rr[2]
+                    - rr[0] ** 2
+                    - rr[2] ** 2
+                )
+                / (2 * d**2)
             )
             / (jnp.sqrt(jnp.pi) * d**5 * rr[0]),
         ]
     )
 
 
-def pert_gaussian(rr, R, d, m, n):
+def pert_gaussian(rr, R, Z, d, m, n):
     return jnp.array(
         [
             jnp.sqrt(2)
@@ -233,13 +277,23 @@ def pert_gaussian(rr, R, d, m, n):
                 d**2
                 * m
                 * jnp.imag(
-                    (-R + rr[0] + 1j * rr[2]) ** (m - 1) * jnp.exp(1j * n * rr[1])
+                    (-R + rr[0] - 1j * (Z - rr[2])) ** (m - 1) * jnp.exp(1j * n * rr[1])
                 )
-                + rr[2]
-                * jnp.real((-R + rr[0] + 1j * rr[2]) ** m * jnp.exp(1j * n * rr[1]))
+                - (Z - rr[2])
+                * jnp.real(
+                    (-R + rr[0] - 1j * (Z - rr[2])) ** m * jnp.exp(1j * n * rr[1])
+                )
             )
             * jnp.exp(
-                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+                (
+                    -(R**2)
+                    + 2 * R * rr[0]
+                    - Z**2
+                    + 2 * Z * rr[2]
+                    - rr[0] ** 2
+                    - rr[2] ** 2
+                )
+                / (2 * d**2)
             )
             / (2 * jnp.sqrt(jnp.pi) * d**3 * rr[0]),
             0,
@@ -248,13 +302,23 @@ def pert_gaussian(rr, R, d, m, n):
                 d**2
                 * m
                 * jnp.real(
-                    (-R + rr[0] + 1j * rr[2]) ** (m - 1) * jnp.exp(1j * n * rr[1])
+                    (-R + rr[0] - 1j * (Z - rr[2])) ** (m - 1) * jnp.exp(1j * n * rr[1])
                 )
                 + (R - rr[0])
-                * jnp.real((-R + rr[0] + 1j * rr[2]) ** m * jnp.exp(1j * n * rr[1]))
+                * jnp.real(
+                    (-R + rr[0] - 1j * (Z - rr[2])) ** m * jnp.exp(1j * n * rr[1])
+                )
             )
             * jnp.exp(
-                (-(R**2) + 2 * R * rr[0] - rr[0] ** 2 - rr[2] ** 2) / (2 * d**2)
+                (
+                    -(R**2)
+                    + 2 * R * rr[0]
+                    - Z**2
+                    + 2 * Z * rr[2]
+                    - rr[0] ** 2
+                    - rr[2] ** 2
+                )
+                / (2 * d**2)
             )
             / (2 * jnp.sqrt(jnp.pi) * d**3 * rr[0]),
         ]
@@ -268,7 +332,9 @@ PERT_TYPES_DICT = {
 }
 
 
-# Plot of the field intensity
+## Additional plotting functions
+
+# psi functions
 def gaussian_psi(rr, R=3.0, d=0.1, m=2, n=1):
     return (
         ((rr[0] - R + rr[2] * 1j) ** m)
@@ -287,8 +353,8 @@ def mb_psi(rr, R=3.0, d=0.1, m=2, n=1):
     )
 
 
-def plot_intensities(ps, rw=[2, 5], zw=[-2, 2], nl=[100, 100]):
-    fig, axs = plt.subplots(1, 4, figsize=(20, 5))
+def plot_intensities(ps, rw=[2, 5], zw=[-2, 2], nl=[100, 100], N_levels=50):
+    fig, axs = plt.subplots(2, 3, figsize=(20, 5))
 
     r = np.linspace(rw[0], rw[1], nl[0])
     z = np.linspace(zw[0], zw[1], nl[1])
@@ -297,20 +363,24 @@ def plot_intensities(ps, rw=[2, 5], zw=[-2, 2], nl=[100, 100]):
     Bs = np.array(
         [ps.B([r, 0.0, z]) for r, z in zip(R.flatten(), Z.flatten())]
     ).reshape(R.shape + (3,))
-    mappable = axs[2].contourf(R, Z, np.linalg.norm(Bs, axis=2))
+    mappable = axs[1, 0].contourf(R, Z, Bs[:, :, 0], levels=N_levels)
+    fig.colorbar(mappable)
+    mappable = axs[1, 1].contourf(R, Z, Bs[:, :, 1], levels=N_levels)
+    fig.colorbar(mappable)
+    mappable = axs[1, 2].contourf(R, Z, Bs[:, :, 2], levels=N_levels)
     fig.colorbar(mappable)
 
     Bs = np.array(
-        [ps.B_equilibrium([r, 0.0, z]) for r, z in zip(R.flatten(), Z.flatten())]
+        [ps.B([r, 0.0, z]) for r, z in zip(R.flatten(), Z.flatten())]
     ).reshape(R.shape + (3,))
-    mappable = axs[3].contourf(R, Z, np.linalg.norm(Bs, axis=2))
+    mappable = axs[0, 2].contourf(R, Z, np.linalg.norm(Bs, axis=2), levels=N_levels)
     fig.colorbar(mappable)
 
     R, Z = np.meshgrid(r, z)
     Bs = np.array(
         [ps.B_perturbation([r, 0.0, z]) for r, z in zip(R.flatten(), Z.flatten())]
     ).reshape(R.shape + (3,))
-    mappable = axs[1].contourf(R, Z, np.linalg.norm(Bs, axis=2))
+    mappable = axs[0, 1].contourf(R, Z, np.linalg.norm(Bs, axis=2), levels=N_levels)
     fig.colorbar(mappable)
 
     psi = 0
@@ -334,12 +404,14 @@ def plot_intensities(ps, rw=[2, 5], zw=[-2, 2], nl=[100, 100]):
             ).reshape(R.shape)
         psi += pertdic["amplitude"] * np.real(tmp_psi)
 
-    mappable = axs[0].contourf(R, Z, psi)
+    if len(ps.perturbations_args) == 0:
+        psi = np.zeros(R.shape)
+    mappable = axs[0, 0].contourf(R, Z, psi)
     fig.colorbar(mappable)
 
     # Set the aspect equal
-    for ax in axs:
-        ax.set_aspect("equal")
-        ax.scatter(ps._R0, 0, color="r", s=1)
+    for ax in axs.flatten():
+        # ax.set_aspect("equal")
+        ax.scatter(ps._R0, ps._Z0, color="r", s=1)
 
     return fig, axs
