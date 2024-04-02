@@ -10,179 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class AnalyticCylindricalBfield(CylindricalBfield):
-    """Analytical Bfield problem class that allows adding analytical perturbations to an analytical equilibrium field. The equilibrium field is
-    defined by the function `equ_squared(R, sf, shear)` and the perturbations can be choosen from the type dictionary. The possible types are:
-        - "maxwell-boltzmann": Maxwell-Boltzmann distributed perturbation
-        - "gaussian": Normally distributed perturbation
-
-    Attributes:
-        sf (float): Safety factor on the magnetic axis
-        shear (float): Shear factor
-        perturbations_args (list): List of dictionaries with the arguments of each perturbation
-        amplitude (list): List of amplitudes of the perturbations. One can set the amplitude of all perturbations
-            at once by setting this attribute:
-            $ myBfield.amplitudes = [1, 2, 3]
-            $ myBfield.amplitudes
-            >> [1, 2, 3]
-        perturbations (list): List of perturbations functions. To call a certain (for instance the first) perturbation one can do:
-            $ myBfield.perturbations[0](rphiz)
-            >> value
-
-    Methods:
-        set_amplitude(index, value): Set the amplitude of the perturbation at index to value
-        set_perturbation(index, perturbation_args): Set the perturbation at index to be defined by perturbation_args
-        add_perturbation(perturbation_args): Add a new perturbation defined by perturbation_args
-        B_equilibrium(rphiz): Equilibrium field function
-        dBdX_equilibrium(rphiz): Gradient of the equilibrium field function
-        B_perturbation(rphiz): Perturbation field function
-        dBdX_perturbation(rphiz): Gradient of the perturbation field function
-    """
-
-    def __init__(self, R, Z, sf, shear, perturbations_args, additional_eqargs=None):
-        """
-        Args:
-            R (float): Major radius of the magnetic axis of the equilibrium field
-            Z (float): Z coordinate of the magnetic axis of the equilibrium field
-            sf (float): Safety factor on the magnetic axis
-            shear (float): Shear factor
-            perturbations_args (list): List of dictionaries with the arguments of each perturbation
-
-        Example:
-            $ pert1_dict = {m:2, n:-1, d:1, type: "maxwell-boltzmann", amplitude: 1e-2}
-            $ pert2_dict = {m:1, n:0, d:1, type: "gaussian", amplitude: -1e-2}
-            $ myBfield = AnalyticCylindricalBfield(R= 3, sf = 1.1, shear=3 pert=[pert1_dict, pert2_dict])
-        """
-
-        self.sf = sf
-        self.shear = shear
-
-        # Define the equilibrium field and its gradient
-        if additional_eqargs is not None:
-            self.B_equilibrium = lambda rr: equ_squared(
-                rr, R=R, Z=Z, sf=sf, shear=shear
-            ) + jnp.sum(
-                jnp.array(
-                    [
-                        jnp.multiply(
-                            jnp.array(args["amplitudes"]),
-                            equ_squared(
-                                rr,
-                                R=args["R"],
-                                Z=args["Z"],
-                                sf=args["sf"],
-                                shear=args["shear"],
-                            ),
-                        )
-                        for args in additional_eqargs
-                    ]
-                ),
-                axis=0,
-            )
-        else:
-            self.B_equilibrium = partial(equ_squared, R=R, Z=Z, sf=sf, shear=shear)
-
-        self.dBdX_equilibrium = lambda rr: jacfwd(self.B_equilibrium)(rr)
-
-        # Define the perturbations and the gradient of the resulting field sum
-        self._perturbations = [None] * len(perturbations_args)
-        for pertdic in perturbations_args:
-            pertdic.update({"R": R, "Z": Z})
-
-        self.perturbations_args = perturbations_args
-        self._initialize_perturbations()
-
-        # Call the CylindricalBfield constructor with (R,Z) of the axis
-        super().__init__(R, Z)
-
-    @property
-    def amplitudes(self):
-        return [pert["amplitude"] for pert in self.perturbations_args]
-
-    @amplitudes.setter
-    def amplitudes(self, value):
-        for i, pertdic in enumerate(self.perturbations_args):
-            pertdic["amplitude"] = value[i]
-        self._initialize_perturbations()
-
-    def set_amplitude(self, index, value):
-        """Set the amplitude of the perturbation at index to value"""
-        self.amplitudes[index] = value
-        self._initialize_perturbations(index)
-
-    def set_perturbation(self, index, perturbation_args):
-        self.perturbations_args[index] = perturbation_args
-        self.perturbations_args[index].update({"R": self._R0, "Z": self._Z0})
-        self._initialize_perturbations(index)
-
-    def add_perturbation(self, perturbation_args):
-        self.perturbations_args.append(perturbation_args)
-        self._perturbations.append(None)
-        self.perturbations_args[-1].update({"R": self._R0, "Z": self._Z0})
-        self._initialize_perturbations(len(self.perturbations_args) - 1)
-
-    def _initialize_perturbations(self, index=None):
-        if index is not None:
-            indices = [index]
-        else:
-            indices = range(len(self.perturbations_args))
-
-        for i in indices:
-            tmp_args = self.perturbations_args[i].copy()
-            tmp_args.pop("amplitude")
-            tmp_args.pop("type")
-
-            self._perturbations[i] = partial(
-                PERT_TYPES_DICT[self.perturbations_args[i]["type"]], **tmp_args
-            )
-
-        if len(self.perturbations_args) > 0:
-            self.B_perturbation = jit(
-                lambda rr: jnp.sum(
-                    jnp.array(
-                        [
-                            pertdic["amplitude"] * self._perturbations[i](rr)
-                            for i, pertdic in enumerate(self.perturbations_args)
-                        ]
-                    ),
-                    axis=0,
-                )
-            )
-        else:
-            self.B_perturbation = lambda rr: jnp.array([0, 0, 0])
-
-        # gradient of the resulting perturbation
-        self.dBdX_perturbation = lambda rr: jacfwd(self.B_perturbation)(rr)
-
-        # Define the total field and its gradient
-        self._B = jit(lambda rr: self.B_equilibrium(rr) + self.B_perturbation(rr))
-        self._dBdX = jit(
-            lambda rr: self.dBdX_equilibrium(rr) + self.dBdX_perturbation(rr)
-        )
-
-    @property
-    def perturbations(self):
-        return [
-            jit(lambda rr: pertdic["amplitude"] * self._perturbations[i](rr))
-            for i, pertdic in enumerate(self.perturbations_args)
-        ]
-
-    # BfieldProblem methods implementation
-
-    def B(self, rr):
-        return np.array(self._B(rr))
-
-    def dBdX(self, rr):
-        return np.array(self._dBdX(rr))
-
-    def B_many(self, r, phi, z, input1D=True):
-        return np.array([self._B([r[i], phi[i], z[i]]) for i in range(len(r))])
-
-    def dBdX_many(self, r, phi, z, input1D=True):
-        return np.array([self._dBdX([r[i], phi[i], z[i]]) for i in range(len(r))])
-
-
-## Equilibrium field
+## Equilibrium fields
 
 
 def equ_squared(rr, R, Z, sf, shear):
@@ -207,7 +35,36 @@ def equ_squared(rr, R, Z, sf, shear):
     )
 
 
-## Perturbation field
+def equ_squared_ellipse(rr, R, Z, sf, shear, A, B):
+    """
+    Returns the B field derived from the Psi and F flux functions derived with the fluxes:
+    $$
+
+    $$
+    using the relation B = grad x A, with A_\phi = \psi / r and B_\phi = F / r for an axisymmetric field in cylindrical coordinates.
+    """
+    temp = jnp.maximum(
+        R**2 - (Z - rr[2]) ** 2 / B**2 - (R - rr[0]) ** 2 / A**2, 0.0
+    )
+    sgn = (
+        1 + jnp.sign(R**2 - (Z - rr[2]) ** 2 / B**2 - (R - rr[0]) ** 2 / A**2)
+    ) / 2
+
+    return sgn * jnp.array(
+        [
+            -(-2 * Z + 2 * rr[2]) / (B**2 * rr[0]),
+            (
+                2 * sf
+                + 2 * shear * ((Z - rr[2]) ** 2 / B**2 + (R - rr[0]) ** 2 / A**2)
+            )
+            * jnp.sqrt(temp)
+            / rr[0] ** 2,
+            (-2 * R + 2 * rr[0]) / (A**2 * rr[0]),
+        ]
+    )
+
+
+## Perturbation fields
 
 
 def pert_maxwellboltzmann(rr, R, Z, d, m, n):
@@ -342,11 +199,187 @@ def pert_gaussian(rr, R, Z, d, m, n):
     )
 
 
-# Dictionary with the perturbation types
-PERT_TYPES_DICT = {
-    "maxwell-boltzmann": pert_maxwellboltzmann,
-    "gaussian": pert_gaussian,
-}
+# class definition
+
+
+class AnalyticCylindricalBfield(CylindricalBfield):
+    """Analytical Bfield problem class that allows adding analytical perturbations to an analytical equilibrium field. The equilibrium field is
+    defined by the function `equ_squared(R, sf, shear)` and the perturbations can be choosen from the type dictionary. The possible types are:
+        - "maxwell-boltzmann": Maxwell-Boltzmann distributed perturbation
+        - "gaussian": Normally distributed perturbation
+
+    Attributes:
+        sf (float): Safety factor on the magnetic axis
+        shear (float): Shear factor
+        perturbations_args (list): List of dictionaries with the arguments of each perturbation
+        amplitude (list): List of amplitudes of the perturbations. One can set the amplitude of all perturbations
+            at once by setting this attribute:
+            $ myBfield.amplitudes = [1, 2, 3]
+            $ myBfield.amplitudes
+            >> [1, 2, 3]
+        perturbations (list): List of perturbations functions. To call a certain (for instance the first) perturbation one can do:
+            $ myBfield.perturbations[0](rphiz)
+            >> value
+
+    Methods:
+        set_amplitude(index, value): Set the amplitude of the perturbation at index to value
+        set_perturbation(index, perturbation_args): Set the perturbation at index to be defined by perturbation_args
+        add_perturbation(perturbation_args): Add a new perturbation defined by perturbation_args
+        B_equilibrium(rphiz): Equilibrium field function
+        dBdX_equilibrium(rphiz): Gradient of the equilibrium field function
+        B_perturbation(rphiz): Perturbation field function
+        dBdX_perturbation(rphiz): Gradient of the perturbation field function
+    """
+
+    _pert_types_dict = {
+        "maxwell-boltzmann": pert_maxwellboltzmann,
+        "gaussian": pert_gaussian,
+        "squared-circle": equ_squared,
+        "squared-ellipse": equ_squared_ellipse,
+    }
+
+    def __init__(self, R, Z, sf, shear, perturbations_args=list(), A=None, B=None):
+        """
+        Args:
+            R (float): Major radius of the magnetic axis of the equilibrium field
+            Z (float): Z coordinate of the magnetic axis of the equilibrium field
+            sf (float): Safety factor on the magnetic axis
+            shear (float): Shear factor
+            perturbations_args (list): List of dictionaries with the arguments of each perturbation
+
+            Optional:
+            If A and B are provided, the equilibrium field will be defined as an ellipse with major radius A and minor radius B.
+            A (float): Major radius of the ellipse in the squared-ellipse equilibrium field
+            B (float): Minor radius of the ellipse in the squared-ellipse equilibrium field
+
+        Example:
+            $ pert1_dict = {m:2, n:-1, d:1, type: "maxwell-boltzmann", amplitude: 1e-2}
+            $ pert2_dict = {m:1, n:0, d:1, type: "gaussian", amplitude: -1e-2}
+            $ myBfield = AnalyticCylindricalBfield(R= 3, sf = 1.1, shear=3 pert=[pert1_dict, pert2_dict])
+        """
+
+        self.sf = sf
+        self.shear = shear
+
+        # Define the equilibrium field and its gradient
+        if A is None and B is None:
+            self.B_equilibrium = partial(
+                equ_squared_ellipse, R=R, Z=Z, sf=sf, shear=shear, A=A, B=B
+            )
+        else:
+            self.B_equilibrium = partial(equ_squared, R=R, Z=Z, sf=sf, shear=shear)
+
+        self.dBdX_equilibrium = lambda rr: jacfwd(self.B_equilibrium)(rr)
+
+        # Define the perturbations and the gradient of the resulting field sum
+        self._perturbations = [None] * len(perturbations_args)
+        for pertdic in perturbations_args:
+            pertdic.update({"R": R, "Z": Z})
+
+        self.perturbations_args = perturbations_args
+        self._initialize_perturbations()
+
+        # Call the CylindricalBfield constructor with (R,Z) of the axis
+        if len(perturbations_args) > 0:
+            super().__init__(
+                None,
+                None,
+                Nfp=1,
+                findaxargs={"guess": [R, Z], "sbegin": 0.5 * R, "send": 1.5 * R},
+            )
+        else:
+            super().__init__(R, Z, Nfp=1)
+
+    @property
+    def amplitudes(self):
+        return [pert["amplitude"] for pert in self.perturbations_args]
+
+    @amplitudes.setter
+    def amplitudes(self, value):
+        for i, pertdic in enumerate(self.perturbations_args):
+            pertdic["amplitude"] = value[i]
+        self._initialize_perturbations()
+
+    def set_amplitude(self, index, value):
+        """Set the amplitude of the perturbation at index to value"""
+
+        self.amplitudes[index] = value
+        self._initialize_perturbations(index)
+
+    def set_perturbation(self, index, perturbation_args):
+        """Set the perturbation at index to be defined by perturbation_args"""
+
+        self.perturbations_args[index] = perturbation_args
+        self.perturbations_args[index].update({"R": self._R0, "Z": self._Z0})
+        self._initialize_perturbations(index)
+
+    def add_perturbation(self, perturbation_args):
+        """Add a new perturbation defined by perturbation_args"""
+
+        self.perturbations_args.append(perturbation_args)
+        self._perturbations.append(None)
+        self.perturbations_args[-1].update({"R": self._R0, "Z": self._Z0})
+        self._initialize_perturbations(len(self.perturbations_args) - 1)
+
+    def _initialize_perturbations(self, index=None):
+        """Initialize the perturbations functions and the gradient. Also updates the total field and its gradient."""
+
+        if index is not None:
+            indices = [index]
+        else:
+            indices = range(len(self.perturbations_args))
+
+        for i in indices:
+            tmp_args = self.perturbations_args[i].copy()
+            tmp_args.pop("amplitude")
+            tmp_args.pop("type")
+
+            self._perturbations[i] = partial(
+                self._pert_types_dict[self.perturbations_args[i]["type"]], **tmp_args
+            )
+
+        if len(self.perturbations_args) > 0:
+            self.B_perturbation = lambda rr: jnp.sum(
+                jnp.array(
+                    [
+                        pertdic["amplitude"] * self._perturbations[i](rr)
+                        for i, pertdic in enumerate(self.perturbations_args)
+                    ]
+                ),
+                axis=0,
+            )
+        else:
+            self.B_perturbation = lambda rr: jnp.array([0, 0, 0])
+
+        # gradient of the resulting perturbation
+        self.dBdX_perturbation = lambda rr: jacfwd(self.B_perturbation)(rr)
+
+        # Define the total field and its gradient
+        self._B = jit(lambda rr: self.B_equilibrium(rr) + self.B_perturbation(rr))
+        self._dBdX = jit(
+            lambda rr: self.dBdX_equilibrium(rr) + self.dBdX_perturbation(rr)
+        )
+
+    @property
+    def perturbations(self):
+        return [
+            jit(lambda rr: pertdic["amplitude"] * self._perturbations[i](rr))
+            for i, pertdic in enumerate(self.perturbations_args)
+        ]
+
+    # BfieldProblem methods implementation
+
+    def B(self, rr):
+        return np.array(self._B(rr))
+
+    def dBdX(self, rr):
+        return np.array(self._dBdX(rr))
+
+    def B_many(self, r, phi, z, input1D=True):
+        return np.array([self._B([r[i], phi[i], z[i]]) for i in range(len(r))])
+
+    def dBdX_many(self, r, phi, z, input1D=True):
+        return np.array([self._dBdX([r[i], phi[i], z[i]]) for i in range(len(r))])
 
 
 ## Additional plotting functions
