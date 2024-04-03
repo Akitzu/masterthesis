@@ -240,9 +240,6 @@ def ellpe(m):
     return jnp.polyval(P_coeffs, x) - jnp.log(x) * (x * jnp.polyval(Q_coeffs, x))
 
 
-# C1 = 1.3862943611198906188E0  # log(4)
-
-
 def ellpk(m):
     """Complete elliptic integral of the first kind"""
     P_coeffs = jnp.array(
@@ -375,7 +372,7 @@ class AnalyticCylindricalBfield(CylindricalBfield):
         else:
             self.B_equilibrium = partial(equ_squared, R=R, Z=Z, sf=sf, shear=shear)
 
-        self.dBdX_equilibrium = lambda rr: jacfwd(self.B_equilibrium)(rr)
+        self.dBdX_equilibrium = lambda rr: jnp.array(jacfwd(self.B_equilibrium)(rr))
 
         # Define the perturbations and the gradient of the resulting field sum
         self._perturbations = [None] * len(perturbations_args)
@@ -475,7 +472,7 @@ class AnalyticCylindricalBfield(CylindricalBfield):
             self.B_perturbation = lambda rr: jnp.array([0, 0, 0])
 
         # gradient of the resulting perturbation
-        self.dBdX_perturbation = lambda rr: jacfwd(self.B_perturbation)(rr)
+        self.dBdX_perturbation = lambda rr: jnp.array(jacfwd(self.B_perturbation)(rr))
 
         # Define the total field and its gradient
         self._B = jit(lambda rr: self.B_equilibrium(rr) + self.B_perturbation(rr))
