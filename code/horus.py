@@ -14,7 +14,7 @@ from simsopt.field import (
 )
 from simsopt.geo import SurfaceRZFourier
 
-from pyoculus.problems import CartesianBfield
+from pyoculus.problems import CartesianBfield, CylindricalBfield
 from pyoculus.solvers import FixedPoint, PoincarePlot
 
 import matplotlib.pyplot as plt
@@ -195,8 +195,21 @@ def stellarator(curves, currents, ma, nfp, **kwargs):
 
 ### Magnetic field line tracing using solve_ip ###
 
+def trace(bobject, tf, xx, **kwargs):
+    if isinstance(bobject, MagneticField):
+        def unit_Bfield(t, xx):
+            bobject.set_points(xx.reshape((-1, 3)))
+            return normalize(bobject.B().flatten())
+    elif isinstance(bobject, CylindricalBfield):
+        kwargs["is_cylindrical"] = True
+        def unit_Bfield(t, xx):
+            return bobject.f_RZ(t, [xx[0], xx[1]])
+    else:
+        raise ValueError("bobject must be a MagneticField or a CylindricalBfield")
+    return _trace(unit_Bfield, tf, xx, **kwargs)
+    
 
-def trace(bs, tf, xx, **kwargs):
+def _trace(unit_Bfield, tf, xx, **kwargs):
     """Compute the curve of the magnetic field line in 3d in the forward direction from the initial point xx
     using scipy to solve the Initial Value Problem.
 
@@ -216,15 +229,12 @@ def trace(bs, tf, xx, **kwargs):
         "t_eval": None,
         "steps": int(tf * 1000),
         "method": "DOP853",
+        "is_cylindrical": False,
     }
     options.update(kwargs)
 
     if options["t_eval"] is None:
         options["t_eval"] = np.linspace(0, tf, options["steps"])
-
-    def unit_Bfield(t, xx):
-        bs.set_points(xx.reshape((-1, 3)))
-        return normalize(bs.B().flatten())
 
     out = solve_ivp(
         unit_Bfield,
@@ -235,7 +245,13 @@ def trace(bs, tf, xx, **kwargs):
         rtol=options["rtol"],
         atol=options["atol"],
     )
-    return out.y
+
+    if options["is_cylindrical"]:
+        gamma = np.array([[r*np.cos(phi), r*np.sin(phi), z] for r, phi, z in zip(out.y[0], out.t, out.y[1])]).T
+    else:
+        gamma = out.y
+
+    return gamma, out
 
 
 ### Drawing of a Poincare section ###
