@@ -1,16 +1,20 @@
 {
 	"folders": [
 		{
-			"path": ".."
-		},
-		{
+			"name": "horus",
 			"path": "../imports/horus"
 		},
 		{
+			"name": "pyoculus",
 			"path": "../imports/pyoculus"
 		},
 		{
+			"name": "simsopt",
 			"path": "../imports/simsopt"
+		},
+		{
+			"name": "masterthesis",
+			"path": ".."
 		}
 	],
 	"settings": {
