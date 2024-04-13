@@ -622,7 +622,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
         "sbegin": 1.2,
         "send": 1.9,
         "tol": 1e-4,
-        "checkonly": False,
+        "checkonly": True,
         "eps": 1e-4,
     }
     options.update(kwargs)
@@ -635,14 +635,15 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
     pparams = {"nrestart": 0, "niter": 30}
     pparams.update(kwargs)
 
-    fp = FixedPoint(ps, pparams, integrator_params=iparams)
     R, Z = np.meshgrid(Rw, Zw)
 
     assigned_to = list()
     fixed_points = list()
+    all_fixed_points = list()
 
     for r, z in zip(R.flatten(), Z.flatten()):
-        fp_result = fp.compute(
+        fp_result = FixedPoint(ps, pparams, integrator_params=iparams)
+        fp_result.compute(
             guess=[r, z],
             pp=options["pp"],
             qq=options["qq"],
@@ -652,7 +653,7 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
             checkonly=options["checkonly"],
         )
 
-        if fp_result is not None:
+        if fp_result.successful is True:
             fp_result_xyz = np.array([fp_result.x[0], fp_result.y[0], fp_result.z[0]])
             assigned = False
             for j, fpt in enumerate(fixed_points):
@@ -663,11 +664,15 @@ def convergence_domain(ps, Rw, Zw, **kwargs):
             if not assigned:
                 assigned_to.append(len(fixed_points))
                 fixed_points.append(fp_result)
+            all_fixed_points.append(fp_result)
         else:
             assigned_to.append(-1)
+            all_fixed_points.append(None)
 
-    return R, Z, np.array(assigned_to), fixed_points
+    return R, Z, np.array(assigned_to), fixed_points, all_fixed_points
 
+def plot_convergence_domain(convdom, ax=None, colors=None):
+    return plot_convergence_domain(*convdom[0:4], ax=ax, colors=colors)
 
 def plot_convergence_domain(R, Z, assigned_to, fixed_points, ax=None, colors=None):
     """Plot the convergence domain for FixedPoint solver in the R-Z plane. If ax is None, a new figure is created,

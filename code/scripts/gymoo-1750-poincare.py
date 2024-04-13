@@ -12,7 +12,7 @@ import os
 
 ROOT_DIR = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(os.path.abspath(ROOT_DIR))
-import horus as ho
+import code.horus.horus as ho
 
 
 if __name__ == "__main__":
