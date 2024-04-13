@@ -1,7 +1,5 @@
 imports
-simsopt
 __pycache__
-pyoculus
 
 *.mkv
 *.mp4
