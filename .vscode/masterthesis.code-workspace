@@ -15,9 +15,7 @@
 	],
 	"settings": {
 		"files.exclude": {
-			"../imports/horus": true,
-			"../imports/pyoculus": true,
-			"../imports/simsopt": true
+			"**/imports": true,
 		}
 	}
 }
