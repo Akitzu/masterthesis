@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../imports/horus"
+		},
+		{
+			"path": "../imports/pyoculus"
+		},
+		{
+			"path": "../imports/simsopt"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"../imports/horus": true,
+			"../imports/pyoculus": true,
+			"../imports/simsopt": true
+		}
+	}
+}
