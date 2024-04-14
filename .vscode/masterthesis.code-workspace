@@ -20,6 +20,7 @@
 	"settings": {
 		"files.exclude": {
 			"**/imports": true,
-		}
+		},
+		"python.analysis.extraPaths": ["../imports/horus", "../imports/pyoculus", "../imports/simsopt"],
 	}
 }
