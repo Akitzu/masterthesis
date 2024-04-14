@@ -8,7 +8,12 @@ if __name__ == "__main__":
     ### Creating the pyoculus problem object
     print("\nCreating the pyoculus problem object\n")
 
-    separatrix = {"type": "circular-current-loop", "amplitude": -4, "R": 9, "Z": 0.0}
+    separatrix = {
+        "type": "circular-current-loop",
+        "amplitude": -1.8,
+        "R": 4.7,
+        "Z": -1.5,
+    }
     # maxwellboltzmann = {"m": 3, "n": -2, "d": 1, "type": "maxwell-boltzmann", "amplitude": 0.01}
     # gaussian10 = {"m": 1, "n": 0, "d": 1, "type": "gaussian", "amplitude": 0.01}
 
@@ -22,7 +27,7 @@ if __name__ == "__main__":
         Rbegin=1,
         Rend=5,
         niter=800,
-        guess=[3.0, -0.1],
+        guess=[3.3, -0.2],
         tol=1e-9,
     )
 
@@ -70,20 +75,26 @@ if __name__ == "__main__":
 
     # Set RZs for the tweaked (R-Z) computation
     nfieldlines = pparams["nPtrj"] + 1
-    Rs = np.linspace(3.2, 3.15, nfieldlines)
-    Zs = np.linspace(-0.43, -2.5, nfieldlines)
-    RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
-    # Set RZs
-    nfieldlines = pparams["nPtrj"] + 1
+    # Directly setting the RZs
+    # Rs = np.linspace(3.2, 3.15, nfieldlines)
+    # Zs = np.linspace(-0.43, -2.5, nfieldlines)
+    # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
+
+    # Two interval computation opoint to xpoint then xpoint to coilpoint
     n1, n2 = int(np.ceil(nfieldlines / 2)), int(np.floor(nfieldlines / 2))
-    # Sophisticated way more around the xpoint
     xpoint = np.array([results[0][0], results[0][2]])
     opoint = np.array([pyoproblem._R0, pyoproblem._Z0])
     coilpoint = np.array(
         [pyoproblem.perturbations_args[0]["R"], pyoproblem.perturbations_args[0]["Z"]]
     )
 
+    # Simple way from opoint to xpoint then to coilpoint
+    # Rs = np.concatenate((np.linspace(opoint[0]+1e4, xpoint[0], n1), np.linspace(xpoint[0], coilpoint[0]-1e-4, n2)))
+    # Zs = np.concatenate((np.linspace(opoint[1]+1e4, xpoint[1], n1), np.linspace(xpoint[1], coilpoint[1]-1e-4, n2)))
+    # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
+
+    # Sophisticated way more around the xpoint
     deps = 0.05
     RZ1 = xpoint + deps * (1 - np.linspace(0, 1, n1)).reshape((n1, 1)) @ (
         opoint - xpoint
