@@ -9,12 +9,13 @@ import argparse
 # Adding the path to the horus package
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import code.horus.horus as ho
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convergence domain for GYM000-1750")
 
     # R = np.linspace(5.4, 6.26, 44)
@@ -40,7 +41,9 @@ if __name__ == '__main__':
     currents.append(Current(-0.3661) * 1e6)
     currents.append(Current(-0.3661) * 1e6)
 
-    bs, bsh, (nfp, coils, ma, sc_fieldline) = ho.stellarator(w7x[0], currents, w7x[2], nfp=5, surface_radius=2)
+    bs, bsh, (nfp, coils, ma, sc_fieldline) = ho.stellarator(
+        w7x[0], currents, w7x[2], nfp=5, surface_radius=2
+    )
 
     # Compute the convergence domain
     ps = ho.SimsoptBfieldProblem(ma.gamma()[0, 0], 0, 5, bs)
@@ -49,7 +52,7 @@ if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()  # Rank of the current process
     size = comm.Get_size()  # Total number of processes
-    
+
     # Divide the work among the processes
     R_split = np.array_split(R, size)[rank]
     Z_split = np.array_split(Z, size)[rank]
@@ -67,10 +70,12 @@ if __name__ == '__main__':
         convdom_checkonly_joined = convdom_checkonly[0]
         convdom_checkonly = convdom_checkonly[1:]
         for convdom in convdom_checkonly:
-            convdom_checkonly_joined = ho.join_convergence_domains(convdom_checkonly_joined, convdom)
+            convdom_checkonly_joined = ho.join_convergence_domains(
+                convdom_checkonly_joined, convdom
+            )
 
         # Save the result
         date = datetime.datetime.now().strftime("%Y%m%d")
         dumpname = f"convergence_domain_GYM000-1750_{date}.pkl"
-        with open(os.path.join('..', 'output', dumpname), 'wb') as f:
+        with open(os.path.join("..", "output", dumpname), "wb") as f:
             pickle.dump(convdom_checkonly_joined, f)
