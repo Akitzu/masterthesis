@@ -2,15 +2,19 @@ from pyoculus.problems import AnalyticCylindricalBfield
 from pyoculus.solvers import PoincarePlot, FixedPoint
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
+import argparse
 import pickle
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compute the Poincare plot of a perturbed tokamak field")
+    parser.add_argument('--save', type=bool, default=True, help='Saving the plot')
+    args = parser.parse_args()
+
     ### Creating the pyoculus problem object
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -4, "R": 3, "Z": -2.2}
-    # maxwellboltzmann = {"m": 3, "n": -2, "d": 1, "type": "maxwell-boltzmann", "amplitude": 0.01}
-    # gaussian10 = {"m": 1, "n": 0, "d": 1, "type": "gaussian", "amplitude": 0.01}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -44,13 +48,16 @@ if __name__ == "__main__":
     fp = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
 
     # find the X-point
-    guess = [3.10, -1.656]
+    guess = [3.1072023810385443, -1.655410284892828]
     print(f"Initial guess: {guess}")
 
     fp.compute(guess=guess, pp=0, qq=1, sbegin=0.1, send=6, tol=1e-10)
 
-    results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
-
+    if fp.successful:
+        results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    else:
+        results = [guess[0], 0., guess[1]]
+                   
     ### Compute the Poincare plot
     print("\nComputing the Poincare plot\n")
 
@@ -118,4 +125,9 @@ if __name__ == "__main__":
     )
     plt.show()
 
-    pickle.dump(fig, open("poincareplot.pkl", "wb"))
+    if args.save:
+        date = datetime.datetime.now().strftime("%m%d%H%M")
+        dumpname = f"poincare_{date}"
+        fig.savefig(dumpname + ".png")
+        with open(dumpname + ".pkl", "wb") as f:
+            pickle.dump(fig, f)

@@ -2,9 +2,16 @@ from pyoculus.problems import AnalyticCylindricalBfield
 from pyoculus.solvers import PoincarePlot, FixedPoint
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
+import argparse
 import pickle
 
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compute the Poincare plot of a perturbed tokamak field")
+    parser.add_argument('--save', type=bool, default=True, help='Saving the plot')
+    args = parser.parse_args()
+
     ### Creating the pyoculus problem object
     print("\nCreating the pyoculus problem object\n")
 
@@ -124,4 +131,10 @@ if __name__ == "__main__":
         results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
     )
     plt.show()
-    pickle.dump(fig, open("poincareplot.pkl", "wb"))
+
+    if args.save:
+        date = datetime.datetime.now().strftime("%m%d%H%M")
+        dumpname = f"poincare_{date}"
+        fig.savefig(dumpname + ".png")
+        with open(dumpname + ".pkl", "wb") as f:
+            pickle.dump(fig, f)
