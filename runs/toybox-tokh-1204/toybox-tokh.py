@@ -45,7 +45,7 @@ if __name__ == "__main__":
     fp = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
 
     # find the X-point
-    guess = [4.10, 0.]
+    guess = [4.624454, 0.]
     print(f"Initial guess: {guess}")
 
     fp.compute(guess=guess, pp=0, qq=1, sbegin=0.1, send=6, tol=1e-10)

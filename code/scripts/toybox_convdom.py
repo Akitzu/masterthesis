@@ -2,6 +2,7 @@ from pyoculus.problems import AnalyticCylindricalBfield
 from horus.convergence_domain import convergence_domain, plot_convergence_domain
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 import pickle
 
 if __name__ == "__main__":
@@ -58,4 +59,9 @@ if __name__ == "__main__":
     convdomplot = convdom[0:4]
     plot_convergence_domain(*convdomplot, ax_perturbed)
     plt.show()
-    pickle.dump(fig_perturbed, open("conv0z1e-10_morepoints.pkl", "wb"))
+
+    date = datetime.datetime.now().strftime("%m%d%H%M")
+    dumpname = f"convdom_{date}"
+    fig_perturbed.savefig(dumpname + ".png")
+    with open(dumpname + ".pkl", "wb") as f:
+        pickle.dump(fig_perturbed, f)
