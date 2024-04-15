@@ -58,7 +58,7 @@ if __name__ == "__main__":
     epsilon = np.logspace(-12, -1, 100)
     errors = np.zeros(100)
 
-    point = [3.1072023810385443, -1.655410284892828]
+    point = [3.1072014330685405, -1.655410224640252]
     v = np.random.random(2)
     for i, eps in enumerate(epsilon):
         v_tmp = eps*v
