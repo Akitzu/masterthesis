@@ -1,0 +1,73 @@
+from pyoculus.integrators import RKIntegrator
+import matplotlib.pyplot as plt
+import numpy as np
+
+import datetime
+import pickle
+import logging
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
+def linearized_error(fun, rtol=1e-10, initpoint=None, vector=None, eps=1e-5):
+    iparams = dict()
+    iparams["rtol"] = rtol
+    iparams["ode"] = fun
+
+    integrator = RKIntegrator(iparams)
+
+    if initpoint is None:
+        raise ValueError("initpoint is not set")
+    if vector is None:
+        vector = eps * np.random.random(2)
+
+    ic = np.array([initpoint[0], initpoint[1], 1.0, 0.0, 0.0, 1.0], dtype=np.float64)
+    integrator.set_initial_value(0, ic)
+    M = integrator.integrate(2 * np.pi)
+    endpoint1 = M[0:2]
+    M = M[2:6].reshape((2, 2)).T
+    print(M)
+
+    inputpoint = initpoint + vector
+    ic = np.array([inputpoint[0], inputpoint[1], 1.0, 0.0, 0.0, 1.0], dtype=np.float64)
+    integrator.set_initial_value(0, ic)
+    endpoint2 = integrator.integrate(2 * np.pi)[0:2]
+
+    return np.linalg.norm(
+        ((M @ vector) - (endpoint2 - endpoint1)) / np.linalg.norm(endpoint2 - endpoint1)
+    )
+
+
+if __name__ == "__main__":
+    pyoproblem = ...
+
+    epsilon = np.logspace(-12, -1, 100)
+    errors = np.zeros(100)
+
+    point = [3.10, -1.656]
+    v = np.random.random(2)
+    for i, eps in enumerate(epsilon):
+        v_tmp = eps * v
+        errors[i] = linearized_error(
+            pyoproblem.f_RZ_tangent, vector=v_tmp, initpoint=point
+        )
+        logging.info(f"eps: {eps}, error: {errors[i]}")
+
+    ### Plotting the results
+    fig, ax = plt.subplots()
+    ax.set_title(
+        f"Linearity of the map at the point : [{point[0]:.2f}, {point[1]:.2f}]"
+    )
+    ax.set_xlabel("eps")
+    ax.set_ylabel("error")
+    ax.loglog(epsilon, errors)
+
+    plt.show()
+
+    date = datetime.datetime.now().strftime("%m%d%H%M")
+    dumpname = f"map_linearity_{date}"
+    fig.savefig(dumpname + ".png")
+    with open(dumpname + ".pkl", "wb") as f:
+        pickle.dump(fig, f)

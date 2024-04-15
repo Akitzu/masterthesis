@@ -11,11 +11,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 bs, bsh, (nfp, coils, ma, sc_fieldline) = ncsx()
 logging.info("CONFIGURATION LOADED")
 
+pyoproblem = SimsoptBfieldProblem(ma.gamma()[0, 0], ma.gamma()[0, 2], nfp, bs)
+
 ## Recover the Poincare plot
 fig = pickle.load(open("../../code/output/NCSX_poincare.pkl", "rb"))
 ax = fig.get_axes()[0]
-
-pyoproblem = SimsoptBfieldProblem(ma.gamma()[0, 0], ma.gamma()[0, 2], nfp, bs)
 
 ### Convergence domain calculation
 rw = np.linspace(1.2, 1.8, 3)
