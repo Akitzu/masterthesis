@@ -58,10 +58,12 @@ if __name__ == "__main__":
     ax_perturbed = fig_perturbed.get_axes()[0]
     convdomplot = convdom[0:4]
     plot_convergence_domain(*convdomplot, ax_perturbed)
-    plt.show()
 
+    fig_perturbed.set_size_inches(10, 6)
     date = datetime.datetime.now().strftime("%m%d%H%M")
-    dumpname = f"convdom_{date}"
-    fig_perturbed.savefig(dumpname + ".png")
+    dumpname = f"convergence_domain_{date}"
     with open(dumpname + ".pkl", "wb") as f:
         pickle.dump(fig_perturbed, f)
+
+    plt.show()
+    fig_perturbed.savefig(dumpname + ".png")

@@ -62,7 +62,10 @@ if __name__ == "__main__":
 
     fp.compute(guess=guess, pp=0, qq=1, sbegin=0.1, send=6, tol=1e-10)
 
-    results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    if fp.successful:
+        results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    else:
+        results = [[guess[0], 0., guess[1]]]
 
     ### Compute the Poincare plot
     print("\nComputing the Poincare plot\n")
@@ -127,14 +130,19 @@ if __name__ == "__main__":
     ax.scatter(
         pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
     )
-    ax.scatter(
-        results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
-    )
-    plt.show()
+    if fp.successful:
+        ax.scatter(
+            results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
+        )
 
     if args.save:
+        fig.set_size_inches(10, 6) 
         date = datetime.datetime.now().strftime("%m%d%H%M")
         dumpname = f"poincare_{date}"
-        fig.savefig(dumpname + ".png")
         with open(dumpname + ".pkl", "wb") as f:
             pickle.dump(fig, f)
+
+    plt.show()
+    
+    if args.save:
+        fig.savefig(dumpname + ".png")
