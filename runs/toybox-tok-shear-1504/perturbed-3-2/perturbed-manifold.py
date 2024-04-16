@@ -10,6 +10,7 @@ import pickle
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute the Poincare plot of a perturbed tokamak field")
     parser.add_argument('-ns','--no-save', action='store_false', help='Not saving the plot')
+    parser.add_argument('-n', '--filename', type=str, default=None, help='Filename to load the plot')
     parser.add_argument('-p','--compute-poincare', action='store_true', help='Computing the poincare plot')
     parser.add_argument('-a','--amplitude', type=float, default=1e-3, help='Amplitude of the perturbation')
     args = parser.parse_args()
@@ -149,9 +150,12 @@ if __name__ == "__main__":
     manifold.plot(ax)
 
     if args.no_save:
-        fig.set_size_inches(10, 6) 
+        fig.set_size_inches(10, 6)
         date = datetime.datetime.now().strftime("%m%d%H%M")
-        dumpname = f"manifold_{date}"
+        if args.filename:
+            dumpname = args.filename
+        else:
+            dumpname = f"manifold_{date}"
         with open(dumpname + ".pkl", "wb") as f:
             pickle.dump(fig, f)
 
