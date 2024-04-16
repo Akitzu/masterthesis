@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 3, "n": -2, "d": 1, "type": "maxwell-boltzmann", "amplitude": 1e-5}
+    gaussian = {"m": 1, "n": 0, "d": 1, "type": "gaussian", "amplitude": 0.1}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -23,7 +23,7 @@ if __name__ == "__main__":
         0,
         0.91,
         0.6,
-        perturbations_args=[separatrix, maxwellboltzmann],
+        perturbations_args=[separatrix, gaussian],
         Rbegin=1,
         Rend=8,
         niter=800,
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     if fp.successful:
         results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
     else:
-        results = [[6.14, 0., -4.45]]
+        results = [[6.203732580655979, 0.0, -4.495896347701468]]
 
     ### Compute the Poincare plot
     print("\nComputing the Poincare plot\n")
@@ -126,14 +126,20 @@ if __name__ == "__main__":
     ax.scatter(
         pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
     )
-    # ax.scatter(
-    #     results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
-    # )
+    if fp.successful:
+        ax.scatter(
+            results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
+        )
     plt.show()
 
     if args.save:
+        fig.set_size_inches(10, 6) 
         date = datetime.datetime.now().strftime("%m%d%H%M")
         dumpname = f"poincare_{date}"
-        fig.savefig(dumpname + ".png")
         with open(dumpname + ".pkl", "wb") as f:
             pickle.dump(fig, f)
+
+    plt.show()
+    
+    if args.save:
+        fig.savefig(dumpname + ".png")

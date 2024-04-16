@@ -28,8 +28,8 @@ if __name__ == "__main__":
     # pyoproblem.add_perturbation(maxwellboltzmann)
 
     ### Convergence domain calculation
-    rw = np.linspace(4.435, 4.438, 30)
-    zw = np.linspace(-1.23, -1.22, 30)
+    rw = np.linspace(3.1025, 3.1125, 30)
+    zw = np.linspace(-1.65, -1.66, 30)
     convdom = convergence_domain(
         pyoproblem,
         rw,
@@ -49,10 +49,12 @@ if __name__ == "__main__":
     ax_perturbed = fig_perturbed.get_axes()[0]
     convdomplot = convdom[0:4]
     plot_convergence_domain(*convdomplot, ax_perturbed)
+    ax_perturbed.legend()
+
     plt.show()
 
     date = datetime.datetime.now().strftime("%m%d%H%M")
-    dumpname = f"convdom_{date}"
+    dumpname = f"convdom_{date}"    
     fig_perturbed.savefig(dumpname + ".png")
     with open(dumpname + ".pkl", "wb") as f:
         pickle.dump(fig_perturbed, f)

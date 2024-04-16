@@ -56,7 +56,7 @@ if __name__ == "__main__":
     if fp.successful:
         results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
     else:
-        results = [guess[0], 0., guess[1]]
+        results = [[guess[0], 0., guess[1]]]
                    
     ### Compute the Poincare plot
     print("\nComputing the Poincare plot\n")
