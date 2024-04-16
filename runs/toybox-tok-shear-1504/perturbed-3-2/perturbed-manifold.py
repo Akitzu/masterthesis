@@ -145,8 +145,6 @@ if __name__ == "__main__":
     manifold.compute(nintersect = 10, neps = 100, epsilon=1e-6, directions="s+")
     manifold.compute(nintersect = 5, neps = 100, epsilon=1e-6, directions="s-")
 
-    breakpoint()
-
     print("\nPlotting the manifold\n")
     manifold.plot(ax)
 
