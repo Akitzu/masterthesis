@@ -27,8 +27,8 @@ if __name__ == "__main__":
     )
 
     ### Convergence domain calculation
-    rw = np.linspace(6.06, 6.33, 30)
-    zw = np.linspace(-4.65, -4.369, 30)
+    rw = np.linspace(6.06, 6.33, 3)
+    zw = np.linspace(-4.65, -4.369, 3)
     convdom = convergence_domain(
         pyoproblem,
         rw,
@@ -44,12 +44,11 @@ if __name__ == "__main__":
     )
 
     ### Plotting
-    fig_perturbed = pickle.load(open("../poincare_04151552.pkl", "rb"))
+    fig_perturbed = pickle.load(open("poincare_04160931.pkl", "rb"))
     ax_perturbed = fig_perturbed.get_axes()[0]
     convdomplot = convdom[0:4]
     plot_convergence_domain(*convdomplot, ax_perturbed)
 
-    
     fig_perturbed.set_size_inches(10, 6)
     date = datetime.datetime.now().strftime("%m%d%H%M")
     dumpname = f"convergence_domain_{date}"
@@ -58,3 +57,5 @@ if __name__ == "__main__":
 
     plt.show()
     fig_perturbed.savefig(dumpname + ".png")
+
+    breakpoint()
