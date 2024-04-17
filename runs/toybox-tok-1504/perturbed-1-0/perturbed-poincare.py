@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 10, "n": -9, "d": 1.4, "type": "maxwell-boltzmann", "amplitude": 1e-3}
+    gaussian = {"m": 1, "n": 0, "d": 1, "type": "gaussian", "amplitude": -1}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -23,7 +23,7 @@ if __name__ == "__main__":
         0,
         0.91,
         0.6,
-        perturbations_args=[separatrix, maxwellboltzmann],
+        perturbations_args=[separatrix],
         Rbegin=1,
         Rend=8,
         niter=800,
@@ -33,14 +33,14 @@ if __name__ == "__main__":
     # pyoproblem = AnalyticCylindricalBfield(6, 0, 0.91, 0.6, perturbations_args=[separatrix])
 
     # # Adding perturbation after the object is created uses the found axis as center point
-    # pyoproblem.add_perturbation(maxwellboltzmann)
+    pyoproblem.add_perturbation(gaussian)
 
     ### Finding the X-point
     print("\nFinding the X-point\n")
 
     # set up the integrator for the FixedPoint
     iparams = dict()
-    iparams["rtol"] = 1e-12
+    iparams["rtol"] = 1e-10
 
     pparams = dict()
     pparams["nrestart"] = 0
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     fp = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
 
     # find the X-point
-    guess = [6.14, -4.45]
+    guess = [6.1986, -4.4863]
     print(f"Initial guess: {guess}")
 
     fp.compute(guess=guess, pp=0, qq=1, sbegin=1, send=8, tol=1e-10)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # set up the integrator for the Poincare
     iparams = dict()
-    iparams["rtol"] = 1e-7
+    iparams["rtol"] = 1e-10
 
     # set up the Poincare plot
     pparams = dict()
@@ -94,19 +94,19 @@ if __name__ == "__main__":
     )
 
     # Simple way from opoint to xpoint then to coilpoint
-    Rs = np.concatenate((np.linspace(opoint[0]+1e-4, xpoint[0], n1), np.linspace(xpoint[0], coilpoint[0]-1e-4, n2)))
-    Zs = np.concatenate((np.linspace(opoint[1]+1e-4, xpoint[1], n1), np.linspace(xpoint[1], coilpoint[1]-1e-4, n2)))
-    RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
+    # Rs = np.concatenate((np.linspace(opoint[0]+1e-4, xpoint[0], n1), np.linspace(xpoint[0], coilpoint[0]-1e-4, n2)))
+    # Zs = np.concatenate((np.linspace(opoint[1]+1e-4, xpoint[1], n1), np.linspace(xpoint[1], coilpoint[1]-1e-4, n2)))
+    # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
     # Sophisticated way more around the xpoint
-    # deps = 0.05
-    # RZ1 = xpoint + deps * (1 - np.linspace(0, 1, n1)).reshape((n1, 1)) @ (
-    #     opoint - xpoint
-    # ).reshape((1, 2))
-    # RZ2 = xpoint + deps * np.linspace(0, 1, n2).reshape((n2, 1)) @ (
-    #     coilpoint - xpoint
-    # ).reshape((1, 2))
-    # RZs = np.concatenate((RZ1, RZ2))
+    deps = 0.05
+    RZ1 = xpoint + deps * (1 - np.linspace(0, 1, n1)).reshape((n1, 1)) @ (
+        opoint - xpoint
+    ).reshape((1, 2))
+    RZ2 = xpoint + deps * np.linspace(0, 1, n2).reshape((n2, 1)) @ (
+        coilpoint - xpoint
+    ).reshape((1, 2))
+    RZs = np.concatenate((RZ1, RZ2))
 
     # Set up the Poincare plot object
     pplot = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)

@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 10, "n": -10, "d": 1.4, "type": "maxwell-boltzmann", "amplitude": 1e-3}
+    maxwellboltzmann = {"m": 3, "n": -2, "d": 1.3, "type": "maxwell-boltzmann", "amplitude": 1e-3}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -23,7 +23,7 @@ if __name__ == "__main__":
         0,
         0.91,
         0.6,
-        perturbations_args=[separatrix, maxwellboltzmann],
+        perturbations_args=[separatrix],
         Rbegin=1,
         Rend=8,
         niter=800,
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # pyoproblem = AnalyticCylindricalBfield(6, 0, 0.91, 0.6, perturbations_args=[separatrix])
 
     # # Adding perturbation after the object is created uses the found axis as center point
-    # pyoproblem.add_perturbation(maxwellboltzmann)
+    pyoproblem.add_perturbation(maxwellboltzmann)
 
     ### Finding the X-point
     print("\nFinding the X-point\n")
@@ -58,24 +58,24 @@ if __name__ == "__main__":
     if fp.successful:
         results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
     else:
-        results = [[6.203732580655979, 0.0, -4.495896347701468]]
+        results = [[6.14, 0., -4.45]]
 
     ### Compute the Poincare plot
     print("\nComputing the Poincare plot\n")
 
     # set up the integrator for the Poincare
     iparams = dict()
-    iparams["rtol"] = 1e-7
+    iparams["rtol"] = 1e-10
 
     # set up the Poincare plot
     pparams = dict()
     pparams["nPtrj"] = 20
-    pparams["nPpts"] = 200
+    pparams["nPpts"] = 150
     pparams["zeta"] = 0
 
     # # Set RZs for the normal (R-only) computation
-    # pparams["Rbegin"] = 3.01
-    # pparams["Rend"] = 5.5
+    pparams["Rbegin"] = 6.01
+    pparams["Rend"] = 5.5
 
     # Set RZs for the tweaked (R-Z) computation
     nfieldlines = pparams["nPtrj"] + 1
@@ -126,11 +126,9 @@ if __name__ == "__main__":
     ax.scatter(
         pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
     )
-    if fp.successful:
-        ax.scatter(
-            results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
-        )
-    plt.show()
+    # ax.scatter(
+    #     results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
+    # )
 
     if args.save:
         fig.set_size_inches(10, 6) 

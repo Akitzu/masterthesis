@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     ### Convergence domain calculation
     rw = np.linspace(3.1025, 3.1125, 30)
-    zw = np.linspace(-1.65, -1.66, 30)
+    zw = np.linspace(-1.66, -1.65, 30)
     convdom = convergence_domain(
         pyoproblem,
         rw,

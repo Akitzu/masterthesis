@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # set up the integrator for the Poincare
     iparams = dict()
-    iparams["rtol"] = 1e-7
+    iparams["rtol"] = 1e-10
 
     # set up the Poincare plot
     pparams = dict()
