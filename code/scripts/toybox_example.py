@@ -10,6 +10,7 @@ import pickle
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute the Poincare plot of a perturbed tokamak field")
     parser.add_argument('--save', type=bool, default=True, help='Saving the plot')
+    parser.add_argument('-n', '--filename', type=str, default=None, help='Filename to load the plot')
     args = parser.parse_args()
 
     ### Creating the pyoculus problem object
@@ -138,7 +139,10 @@ if __name__ == "__main__":
     if args.save:
         fig.set_size_inches(10, 6) 
         date = datetime.datetime.now().strftime("%m%d%H%M")
-        dumpname = f"poincare_{date}"
+        if args.filename:
+            dumpname = args.filename
+        else:
+            dumpname = f"poincare_{date}"
         with open(dumpname + ".pkl", "wb") as f:
             pickle.dump(fig, f)
 
