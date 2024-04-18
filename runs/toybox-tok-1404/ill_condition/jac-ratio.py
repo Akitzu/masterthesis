@@ -23,8 +23,8 @@ def trace_M(fun, rtol = 1e-10, initpoint = None):
     M = integrator.integrate(2*np.pi)
     M = M[2:6].reshape((2,2)).T
 
-    return np.trace(M) 
-    # return np.linalg.det(M)-1
+    eigenvalues = np.sort(np.linalg.eigvals(M))
+    return eigenvalues[0] / eigenvalues[1]
 
 if __name__ == "__main__":
     ### Creating the pyoculus problem object
@@ -64,21 +64,21 @@ if __name__ == "__main__":
     fig_perturbed = pickle.load(open("../poincare_04170914.pkl", "rb"))
     ax_perturbed = fig_perturbed.get_axes()[0]
     
-    # mesh = ax_perturbed.pcolormesh(rw, zw, np.array(traces).reshape((n1,n2)), shading='nearest', cmap='viridis', alpha = 0.5)
+    # mesh = ax_perturbed.pcolormesh(RZs[0], RZs[1], np.array(traces).reshape((n2, n1)), shading='nearest', cmap='viridis', alpha = 0.5)
     # fig_perturbed.colorbar(mesh, ax=ax_perturbed)
 
-    # Calculate the 5th and 95th percentiles of the data
+    # # Calculate the 5th and 95th percentiles of the data
     vmin, vmax = np.percentile(np.array(traces).reshape((n2, n1)), [5, 95])
     # Create a custom normalization object
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
-    
     mesh = ax_perturbed.pcolormesh(RZs[0], RZs[1], np.array(traces).reshape((n2, n1)), shading='nearest', cmap='viridis', alpha = 0.5, norm=norm)
+
     # Add colorbar
     cbar = fig_perturbed.colorbar(mesh, ax=ax_perturbed)
 
     fig_perturbed.set_size_inches(10, 6)
     date = datetime.datetime.now().strftime("%m%d%H%M")
-    dumpname = f"trace_M_{date}"
+    dumpname = f"ratio_M_{date}"
     with open(dumpname + ".pkl", "wb") as f:
         pickle.dump(fig_perturbed, f)
 
