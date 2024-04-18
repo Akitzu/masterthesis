@@ -47,30 +47,32 @@ if __name__ == "__main__":
     )
 
     ### Convergence domain calculation
-    n1, n2 = 60, 60
+    n1, n2 = 100, 100
     # rw = np.linspace(3.05, 3.15, n1)
     # zw = np.linspace(-1.7, -1.6, n2)
-    rw = np.linspace(3.0, 3.2, n1)
-    zw = np.linspace(-1.75, -1.5, n2)
-    # rw = np.linspace(2.5, 3.9, n1)
-    # zw = np.linspace(-2, 0.5, n2)
+    # rw = np.linspace(3.0, 3.2, n1)
+    # zw = np.linspace(-1.75, -1.5, n2)
+    rw = np.linspace(2.5, 3.9, n1)
+    zw = np.linspace(-2, 0.5, n2)
+
+    RZs = np.meshgrid(rw, zw)
 
     ### Linearized error
-    traces = [np.abs(trace_M(pyoproblem.f_RZ_tangent, initpoint = [r, z])) for r in rw for z in zw]
-
+    traces = [np.abs(trace_M(pyoproblem.f_RZ_tangent, initpoint = [r, z])) for r, z in zip(RZs[0].flatten(), RZs[1].flatten())]
+    
     ### Plotting
     fig_perturbed = pickle.load(open("../poincare_04170914.pkl", "rb"))
     ax_perturbed = fig_perturbed.get_axes()[0]
     
-    # mesh = ax_perturbed.pcolormesh(rw, zw, np.array(traces).reshape((n1,n2)), shading='auto', cmap='viridis', alpha = 0.5)
+    # mesh = ax_perturbed.pcolormesh(rw, zw, np.array(traces).reshape((n1,n2)), shading='nearest', cmap='viridis', alpha = 0.5)
     # fig_perturbed.colorbar(mesh, ax=ax_perturbed)
 
     # Calculate the 5th and 95th percentiles of the data
-    # vmin, vmax = np.percentile(np.array(traces).reshape((n1,n2)), [5, 95])
-    # # Create a custom normalization object
-    # norm = colors.Normalize(vmin=vmin, vmax=vmax)
-    # # Use this normalization in the pcolormesh call
-    mesh = ax_perturbed.pcolormesh(rw, zw, np.array(traces).reshape((n1,n2)), shading='auto', cmap='viridis', alpha = 0.5)
+    vmin, vmax = np.percentile(np.array(traces).reshape((n1,n2)), [5, 95])
+    # Create a custom normalization object
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    
+    mesh = ax_perturbed.pcolormesh(RZs[0], RZs[1], np.array(traces).reshape((n1,n2)), shading='nearest', cmap='viridis', alpha = 0.5, norm=norm)
     # Add colorbar
     cbar = fig_perturbed.colorbar(mesh, ax=ax_perturbed)
 

@@ -38,14 +38,15 @@ if __name__ == "__main__":
         qq=1,
         sbegin=2,
         send=6,
-        tol=1e-10,
+        tol=1e-9,
         checkonly=True,
         eps=1e-4,
         rtol=1e-10,
+        niter=100
     )
 
     ### Plotting
-    fig_perturbed = pickle.load(open("../poincare_04151810.pkl", "rb"))
+    fig_perturbed = pickle.load(open("../poincare_04170914.pkl", "rb"))
     ax_perturbed = fig_perturbed.get_axes()[0]
     convdomplot = convdom[0:4]
     plot_convergence_domain(*convdomplot, ax_perturbed)
