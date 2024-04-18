@@ -12,6 +12,6 @@ amplitudes = amplitudes[rank]
 for amp in amplitudes:
     print("rank: {}, amp: {}".format(rank, amp))
     try:
-        compute_manifold(amp)
+        compute_manifold(amp, fname_sigdigit = 3)
     except ValueError as e:
         print(e)
