@@ -151,7 +151,7 @@ if __name__ == "__main__":
     manifold.compute(nintersect = 10, neps = 100, epsilon=1e-6, directions="s+")
 
     print("\nPlotting the manifold\n")
-    manifold.plot(ax)
+    manifold.plot(ax, directions="u+s+")
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     if args.no_save:
