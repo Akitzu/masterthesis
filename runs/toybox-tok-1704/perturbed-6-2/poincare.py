@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 13, "n": -2, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 1e-7}
+    maxwellboltzmann = {"m": 6, "n": -2, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 1e-5}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -98,8 +98,8 @@ if __name__ == "__main__":
 
     # Sophisticated way more around the xpoint
     frac_n1 = 1/2
-    deps = 0.05
     n1, n2 = int(np.ceil(frac_n1 * nfieldlines_2)), int(np.floor((1 - frac_n1) * nfieldlines_2))
+    deps = 0.05
     RZ1 = xpoint + deps * (1 - np.linspace(0, 1, n1)).reshape((n1, 1)) @ (
         opoint - xpoint
     ).reshape((1, 2))
