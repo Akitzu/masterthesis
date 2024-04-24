@@ -69,16 +69,17 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 20
-    pparams["nPpts"] = 200
+    pparams["nPtrj"] = 50
+    pparams["nPpts"] = 300
     pparams["zeta"] = 0
+    pparams["Z"] = pyoproblem._Z0
 
     # # Set RZs for the normal (R-only) computation
-    pparams["Rbegin"] = 6.01
-    pparams["Rend"] = 5.5
+    pparams["Rbegin"] = pyoproblem._R0 + 1e-4
+    pparams["Rend"] = 9
 
     # Set RZs for the tweaked (R-Z) computation
-    nfieldlines = pparams["nPtrj"] + 1
+    # nfieldlines = pparams["nPtrj"] + 1
 
     # Directly setting the RZs
     # Rs = np.linspace(6, 6, nfieldlines)
@@ -86,12 +87,12 @@ if __name__ == "__main__":
     # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
     # Two interval computation opoint to xpoint then xpoint to coilpoint
-    n1, n2 = int(np.ceil(nfieldlines / 2)), int(np.floor(nfieldlines / 2))
-    xpoint = np.array([results[0][0], results[0][2]])
-    opoint = np.array([pyoproblem._R0, pyoproblem._Z0])
-    coilpoint = np.array(
-        [pyoproblem.perturbations_args[0]["R"], pyoproblem.perturbations_args[0]["Z"]]
-    )
+    # n1, n2 = int(np.ceil(nfieldlines / 2)), int(np.floor(nfieldlines / 2))
+    # xpoint = np.array([results[0][0], results[0][2]])
+    # opoint = np.array([pyoproblem._R0, pyoproblem._Z0])
+    # coilpoint = np.array(
+    #     [pyoproblem.perturbations_args[0]["R"], pyoproblem.perturbations_args[0]["Z"]]
+    # )
 
     # Simple way from opoint to xpoint then to coilpoint
     # Rs = np.concatenate((np.linspace(opoint[0]+1e-4, xpoint[0], n1), np.linspace(xpoint[0], coilpoint[0]-1e-4, n2)))
@@ -99,29 +100,30 @@ if __name__ == "__main__":
     # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
     # Sophisticated way more around the xpoint
-    deps = 0.05
-    RZ1 = xpoint + deps * (1 - np.linspace(0, 1, n1)).reshape((n1, 1)) @ (
-        opoint - xpoint
-    ).reshape((1, 2))
-    RZ2 = xpoint + deps * np.linspace(0, 1, n2).reshape((n2, 1)) @ (
-        coilpoint - xpoint
-    ).reshape((1, 2))
-    RZs = np.concatenate((RZ1, RZ2))
+    # deps = 0.05
+    # RZ1 = xpoint + deps * (1 - np.linspace(0, 1, n1)).reshape((n1, 1)) @ (
+    #     opoint - xpoint
+    # ).reshape((1, 2))
+    # RZ2 = xpoint + deps * np.linspace(0, 1, n2).reshape((n2, 1)) @ (
+    #     coilpoint - xpoint
+    # ).reshape((1, 2))
+    # RZs = np.concatenate((RZ1, RZ2))
 
     # Set up the Poincare plot object
     pplot = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)
 
     # # R-only computation
-    # pplot.compute()
+    pplot.compute()
 
     # R-Z computation
-    pplot.compute(RZs)
+    # pplot.compute(RZs)
 
     ### Plotting the results
 
     fig, ax = pplot.plot(marker=".", s=1)
     # ax.set_xlim(3.0, 3.5)
     # ax.set_ylim(-2.5, -0.3)
+
 
     ax.scatter(
         pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
