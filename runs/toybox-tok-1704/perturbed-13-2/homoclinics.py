@@ -18,7 +18,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 13, "n": -2, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 1e-7}
+    maxwellboltzmann = {"m": 13, "n": -2, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 2e-2}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -151,38 +151,38 @@ if __name__ == "__main__":
     # Find the homoclinic points
     eps_s_1, eps_u_1 = manifold.find_homoclinic(1e-6, 1e-6, n_s = 7, n_u = 6)
     
-    guess_2 = [eps_s_1*np.power(manifold.lambda_s, 1/4), eps_u_1*np.power(manifold.lambda_u, 1/4)]
-    print(f"2nd initial guess: {guess_2}")   
-    eps_s_2, eps_u_2 = manifold.find_homoclinic(guess_2[0], guess_2[1], n_s = 7, n_u = 6)
+    # guess_2 = [eps_s_1*np.power(manifold.lambda_s, 1/4), eps_u_1*np.power(manifold.lambda_u, 1/4)]
+    # print(f"2nd initial guess: {guess_2}")   
+    # eps_s_2, eps_u_2 = manifold.find_homoclinic(guess_2[0], guess_2[1], n_s = 7, n_u = 6)
 
     guess_3 = [eps_s_1*np.power(manifold.lambda_s, 2/4), eps_u_1*np.power(manifold.lambda_u, 2/4)]     
     print(f"3rd initial guess: {guess_3}")   
     eps_s_3, eps_u_3 = manifold.find_homoclinic(guess_3[0], guess_3[1], n_s = 7, n_u = 6) 
 
-    guess_4 = [eps_s_1*np.power(manifold.lambda_s, 3/4), eps_u_1*np.power(manifold.lambda_u, 3/4)]     
-    print(f"4rth initial guess: {guess_4}") 
-    eps_s_4, eps_u_4 = manifold.find_homoclinic(guess_4[0], guess_4[1], n_s = 7, n_u = 6)
+    # guess_4 = [eps_s_1*np.power(manifold.lambda_s, 3/4), eps_u_1*np.power(manifold.lambda_u, 3/4)]     
+    # print(f"4rth initial guess: {guess_4}") 
+    # eps_s_4, eps_u_4 = manifold.find_homoclinic(guess_4[0], guess_4[1], n_s = 7, n_u = 6)
 
     # Plot the homoclinic points
     print("\nPlotting homoclinic points")
     hs_1 = manifold.integrate(manifold.rfp_s + eps_s_1 * manifold.vector_s, 7, -1)
-    hs_2 = manifold.integrate(manifold.rfp_s + eps_s_2 * manifold.vector_s, 7, -1)
+    # hs_2 = manifold.integrate(manifold.rfp_s + eps_s_2 * manifold.vector_s, 7, -1)
     hs_3 = manifold.integrate(manifold.rfp_s + eps_s_3 * manifold.vector_s, 7, -1)
-    hs_4 = manifold.integrate(manifold.rfp_s + eps_s_4 * manifold.vector_s, 7, -1)
+    # hs_4 = manifold.integrate(manifold.rfp_s + eps_s_4 * manifold.vector_s, 7, -1)
 
-    hu_1 = manifold.integrate(manifold.rfp_u + eps_u_1 * manifold.vector_u, 6, 1)
+    # hu_1 = manifold.integrate(manifold.rfp_u + eps_u_1 * manifold.vector_u, 6, 1)
     hu_2 = manifold.integrate(manifold.rfp_u + eps_u_2 * manifold.vector_u, 6, 1)
-    hu_3 = manifold.integrate(manifold.rfp_u + eps_u_3 * manifold.vector_u, 6, 1)
+    # hu_3 = manifold.integrate(manifold.rfp_u + eps_u_3 * manifold.vector_u, 6, 1)
     hu_4 = manifold.integrate(manifold.rfp_u + eps_u_4 * manifold.vector_u, 6, 1)
 
-    ax.scatter(hs_1[0,:], hs_1[1,:], marker="x", color="purple", zorder=10)
+    # ax.scatter(hs_1[0,:], hs_1[1,:], marker="x", color="purple", zorder=10)
     ax.scatter(hs_2[0,:], hs_2[1,:], marker="+", color="purple", zorder=10)
-    ax.scatter(hs_3[0,:], hs_3[1,:], marker="o", color="purple", zorder=10)
+    # ax.scatter(hs_3[0,:], hs_3[1,:], marker="o", color="purple", zorder=10)
     ax.scatter(hs_4[0,:], hs_4[1,:], marker="s", color="purple", zorder=10)
 
-    ax.scatter(hu_1[0,:], hu_1[1,:], marker="x", color="blue", zorder=10)
+    # ax.scatter(hu_1[0,:], hu_1[1,:], marker="x", color="blue", zorder=10)
     ax.scatter(hu_2[0,:], hu_2[1,:], marker="+", color="blue", zorder=10)
-    ax.scatter(hu_3[0,:], hu_3[1,:], marker="o", color="blue", zorder=10)
+    # ax.scatter(hu_3[0,:], hu_3[1,:], marker="o", color="blue", zorder=10)
     ax.scatter(hu_4[0,:], hu_4[1,:], marker="s", color="blue", zorder=10)
 
     print("\nComputing the manifold\n")

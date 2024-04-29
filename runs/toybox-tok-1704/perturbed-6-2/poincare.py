@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 6, "n": -2, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 1e-5}
+    maxwellboltzmann = {"m": 6, "n": -2, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 0.1}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # # Adding perturbation after the object is created uses the found axis as center point
     pyoproblem.add_perturbation(maxwellboltzmann)
-
+    
     ### Finding the X-point
     print("\nFinding the X-point\n")
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 25
+    pparams["nPtrj"] = 15
     pparams["nPpts"] = 200
     pparams["zeta"] = 0
 

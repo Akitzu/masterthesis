@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 import pickle
+from multiprocessing import Pool
+
 
 def homoclinics(m, n, amplitude):
     ### Creating the pyoculus problem object
@@ -11,6 +13,7 @@ def homoclinics(m, n, amplitude):
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
     maxwellboltzmann = {"m": m, "n": n, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": amplitude}
+    gaussian = {"m": m, "n": n, "sigma": np.sqrt(2), "mu": 2., "type": "maxwell-boltzmann", "amplitude": amplitude}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -28,6 +31,8 @@ def homoclinics(m, n, amplitude):
 
     # # Adding perturbation after the object is created uses the found axis as center point
     pyoproblem.add_perturbation(maxwellboltzmann)
+
+    # breakpoint()
 
     ### Finding the X-point
     print("\nFinding the X-point\n")
@@ -78,12 +83,10 @@ def homoclinics(m, n, amplitude):
     # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
     # Set RZs for the tweaked (R-Z) computation
-    frac_nf_1 = 1/3
+    frac_nf_1 = 3/4
     nfieldlines_1, nfieldlines_2 = int(np.ceil(frac_nf_1*pparams["nPtrj"])), int(np.floor((1-frac_nf_1)*pparams["nPtrj"]))+1
 
     # Two interval computation opoint to xpoint then xpoint to coilpoint
-    frac_n1 = 3/4
-    n1, n2 = int(np.ceil(frac_n1 * nfieldlines_1)), int(np.floor((1 - frac_n1) * nfieldlines_1))
     xpoint = np.array([results[0][0], results[0][2]])
     opoint = np.array([pyoproblem._R0, pyoproblem._Z0])
     coilpoint = np.array(
@@ -103,6 +106,8 @@ def homoclinics(m, n, amplitude):
     RZs_2 = np.concatenate((RZ1, RZ2))
 
     # Simple way from opoint to xpoint then to coilpoint
+    frac_n1 = 3/4
+    n1, n2 = int(np.ceil(frac_n1 * nfieldlines_1)), int(np.floor((1 - frac_n1) * nfieldlines_1))
     Rs = np.concatenate((np.linspace(opoint[0]+1e-4, xpoint[0]-deps, n1), np.linspace(xpoint[0]+deps, coilpoint[0]-1e-4, n2)))
     Zs = np.concatenate((np.linspace(opoint[1]+1e-4, xpoint[1]-deps, n1), np.linspace(xpoint[1]+deps, coilpoint[1]-1e-4, n2)))
     RZs_1 = np.array([[r, z] for r, z in zip(Rs, Zs)])
@@ -145,9 +150,10 @@ def homoclinics(m, n, amplitude):
 
 
     marker = ["+", "o", "s", "p", "P", "*", "X", "D", "d", "^", "v", "<", ">", "1", "2", "3", "4", "8", "h", "H", "D", "d", "|", "_"]
-    for i in range(1, 2*n):
-        guess_i = [eps_s_1*np.power(manifold.lambda_s, i/(2*n)), eps_u_1*np.power(manifold.lambda_u, i/(2*n))]
-        print(f"{i}th initial guess: {guess_i}")   
+    
+    for i in range(1, 2*np.abs(n)):
+        guess_i = [eps_s_1*np.power(manifold.lambda_s, i/(2*np.abs(n))), eps_u_1*np.power(manifold.lambda_u, i/(2*np.abs(n)))]
+        print(f"{i}th initial guess: {guess_i}")
         eps_s_n, eps_u_n = manifold.find_homoclinic(guess_i[0], guess_i[1], n_s = 7, n_u = 6)
 
         hs_i = manifold.integrate(manifold.rfp_s + eps_s_n * manifold.vector_s, 7, -1)
@@ -165,19 +171,21 @@ def homoclinics(m, n, amplitude):
     print("\nPlotting the manifold\n")
     manifold.plot(ax, directions="u+s+")
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
-
+    
     fig.set_size_inches(10, 10)
     date = datetime.datetime.now().strftime("%m%d%H%M")
-    dumpname = f"homoclinics_{m}_{n}_{amplitude:.2f}_{date}"
+    dumpname = f"homoclinics_{m}_{n}_{amplitude:.5f}_{date}"
     with open(dumpname + ".pkl", "wb") as f:
         pickle.dump(fig, f)
     
     fig.savefig(dumpname + ".png")
+    fig, ax = None, None
+    plt.close()
 
 # Define a function to be run in each process
 def process_func(args):
     m, n = args
-    amplitude = np.power(10.,-(m-1))
+    amplitude = 0.02
     print(f"Running for m = {m}, n = {n}, amplitude = {amplitude:.5f}")
     try:
         homoclinics(m, n, amplitude)
@@ -186,11 +194,13 @@ def process_func(args):
 
 
 if __name__ == "__main__":
-    from multiprocessing import Pool
-    plt.ion()
-
-    ms = np.arange(1, 20)
-    ns = -1*np.ones_like(ms)
+    # ms = np.arange(1, 20)
+    # ns = -1*np.ones_like(ms)
+    # ms = [2,2,2,2,5,5,5,5,10,10,10,10,13,13,13,13,17,17,17,17]
+    # ns = [-1,-2,-3,-4,-1,-2,-3,-4,-1,-2,-3,-4,-1,-2,-3,-4,-1,-2,-3,-4]
+    
+    ns = -np.arange(1, 20)
+    ms = 2*np.ones_like(ns)
 
     # Create a pool of 4 processes
     with Pool(4) as p:

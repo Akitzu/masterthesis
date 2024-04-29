@@ -1,5 +1,6 @@
 from pyoculus.problems import AnalyticCylindricalBfield
 from pyoculus.solvers import PoincarePlot, FixedPoint, Manifold
+from pyoculus.problems.toybox import plot_intensities
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
@@ -194,9 +195,10 @@ if __name__ == "__main__":
     ax.scatter(hu_1[0,:], hu_1[1,:], marker="x", color="blue", zorder=10)
 
     marker = ["+", "o", "s", "p", "P", "*", "X", "D", "d", "^", "v", "<", ">", "1", "2", "3", "4", "8", "h", "H", "D", "d", "|", "_"]
-    for i in range(1, 2*maxwellboltzmann['n']):
-        guess_i = [eps_s_1*np.power(manifold.lambda_s, i/(2*maxwellboltzmann['n'])), eps_u_1*np.power(manifold.lambda_u, i/(2*maxwellboltzmann['n']))]
-        print(f"{i}th initial guess: {guess_i}")   
+    n = np.abs(maxwellboltzmann['n'])
+    for i in range(1, 2*n):
+        guess_i = [eps_s_1*np.power(manifold.lambda_s, i/(2*n)), eps_u_1*np.power(manifold.lambda_u, i/(2*n))]
+        print(f"{i}th initial guess: {guess_i}")
         eps_s_n, eps_u_n = manifold.find_homoclinic(guess_i[0], guess_i[1], n_s = 7, n_u = 6)
 
         hs_i = manifold.integrate(manifold.rfp_s + eps_s_n * manifold.vector_s, 7, -1)
@@ -217,8 +219,11 @@ if __name__ == "__main__":
 
     print("\nPlotting the quiver\n")
     manifold_unperturbed.plot(ax, directions="u+s+", color="black", linewidth = 0.1)
-    
 
+    RZ_manifold = 0
+    breakpoint()
+
+    plot_intensities(pyoproblem, ax = None, rw=[2, 5], zw=[-2, 2], nl=[100, 100], RZ_manifold = RZ_manifold, N_levels=50, alpha = 0.5)
 
     if args.no_save:
         # fig.set_size_inches(10, 6) 

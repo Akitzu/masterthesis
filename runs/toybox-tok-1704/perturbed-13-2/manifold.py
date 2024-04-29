@@ -145,10 +145,10 @@ if __name__ == "__main__":
     iparams["rtol"] = 1e-12
 
     manifold = Manifold(fixedpoint, pyoproblem, integrator_params=iparams)
+    manifold.choose()
 
     print("\nComputing the manifold\n")
-    manifold.compute(nintersect = 10, neps = 300, epsilon=1e-6, directions="u+")
-    manifold.compute(nintersect = 10, neps = 100, epsilon=1e-6, directions="s+")
+    manifold.compute(nintersect = 9, neps = 300, epsilon=1e-7)
 
     print("\nPlotting the manifold\n")
     manifold.plot(ax, directions="u+s+")
