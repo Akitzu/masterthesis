@@ -144,8 +144,8 @@ def homoclinics(m, n, amplitude):
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     print("\nFinding homoclinics\n")
-    manifold.find_clinics(n_points = 6)
-
+    manifold.find_clinics(n_points = 6, n_s = 8, n_u = 4)
+    
     marker = ["+", "o", "s", "p", "P", "*", "X", "D", "d", "^", "v", "<", ">"]
     for i, clinic in enumerate(manifold.clinics):
         eps_s_i, eps_u_i = clinic[1:3]
