@@ -157,14 +157,18 @@ def homoclinics(m, n, amplitude):
     for i, clinic in enumerate(manifold.clinics):
         eps_s_i, eps_u_i = clinic[1:3]
 
-        n_s, n_u = 8, 8
-        
-        hs_i = manifold.integrate(manifold.rfp_s + eps_s_i * manifold.vector_s, n_s, -1)
+        n_u = 8 
+        # hs_i = manifold.integrate(manifold.rfp_s + eps_s_i * manifold.vector_s, n_s, -1)
         hu_i = manifold.integrate(manifold.rfp_u + eps_u_i * manifold.vector_u, n_u, 1)
-        ax.scatter(hs_i[0,:], hs_i[1,:], marker=marker[i], color="purple", zorder=10)
-        ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="blue", zorder=10)
+        # ax.scatter(hs_i[0,:], hs_i[1,:], marker=marker[i], color="purple", zorder=10)
+        ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=10)
 
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(12, 12)
+    ax.set_xlim(3.5, 9.2)
+    ax.set_ylim(-6, 2.5)
+    ax.set_xlabel(r'R [m]')
+    ax.set_ylabel(r'Z [m]')
+
     date = datetime.datetime.now().strftime("%m%d%H%M")
     dumpname = f"area_{m}_{n}_{amplitude:.3e}_{date}"
     with open(dumpname + ".pkl", "wb") as f:
