@@ -131,9 +131,15 @@ if __name__ == "__main__":
         pplot.compute(RZs)
 
         fig, ax = pplot.plot(marker=".", s=1, color="black")
+        
+        ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
     else:
         fig = pickle.load(open(args.input_file, "rb"))
         ax = fig.gca()
+
+        for col in ax.collections:
+            col.set_color('black')
+            col.set_sizes([0.5])
     
     ax.scatter(
             pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
@@ -151,11 +157,10 @@ if __name__ == "__main__":
     manifold.choose(0, 0)
 
     print("\nComputing the manifold\n")
-    manifold.compute(nintersect = 9, neps = 300, epsilon=1e-7)
+    manifold.compute(nintersect = 8, neps = 300,  eps_s=1.3*6.233109701299461e-06, eps_u=1.3*3.84907705931755e-06)
 
     print("\nPlotting the manifold\n")
     manifold.plot(ax, directions="u+s+")
-    ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     if args.no_save:
         # fig.set_size_inches(10, 6) 
@@ -166,6 +171,8 @@ if __name__ == "__main__":
             dumpname = f"manifold_{date}"
         with open(dumpname + ".pkl", "wb") as f:
             pickle.dump(fig, f)
+    
+    plt.show()
     
     if args.no_save:
         fig.savefig(dumpname + ".png")

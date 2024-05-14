@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    maxwellboltzmann = {"m": 6, "n": -1, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 1}
+    maxwellboltzmann = {"m": 6, "n": -1, "d": np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": 0.1}
 
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 25
+    pparams["nPtrj"] = 50
     pparams["nPpts"] = 200
     pparams["zeta"] = 0
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # pparams["Rend"] = 8.2
 
     # Set RZs for the tweaked (R-Z) computation
-    frac_nf_1 = 1/3
+    frac_nf_1 = 2/3
     nfieldlines_1, nfieldlines_2 = int(np.ceil(frac_nf_1*pparams["nPtrj"])), int(np.floor((1-frac_nf_1)*pparams["nPtrj"]))+1
 
     # Two interval computation opoint to xpoint then xpoint to coilpoint

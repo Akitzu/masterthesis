@@ -70,7 +70,7 @@ def homoclinics(m, n, amplitude):
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 40
+    pparams["nPtrj"] = 20
     pparams["nPpts"] = 200
     pparams["zeta"] = 0
 
@@ -85,7 +85,7 @@ def homoclinics(m, n, amplitude):
     # RZs = np.array([[r, z] for r, z in zip(Rs, Zs)])
 
     # Set RZs for the tweaked (R-Z) computation
-    frac_nf_1 = 2/3
+    frac_nf_1 = 3/4
     nfieldlines_1, nfieldlines_2 = int(np.ceil(frac_nf_1*pparams["nPtrj"])), int(np.floor((1-frac_nf_1)*pparams["nPtrj"]))+1
 
     # Two interval computation opoint to xpoint then xpoint to coilpoint
@@ -144,16 +144,9 @@ def homoclinics(m, n, amplitude):
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     print("\nFinding homoclinics\n")
-    manifold.find_homoclinic(2.179774577375764e-07, 3.84907705931755e-06, n_s = 7, n_u = 6)
-
-    fund = manifold.fundamental_segment
-    guess_i = [fund[0][1]*np.power(manifold.lambda_s, 1/2), fund[1][0]*np.power(manifold.lambda_u, 1/2)]
-    print(f"initial guess: {guess_i}")
-
-    manifold.find_homoclinic(*guess_i, bounds = fund, n_s=7, n_u=5)
-
-    print("\nPlotting homoclinics")
-    marker = ["+", "o"] #, "s", "p", "P", "*", "X", "D", "d", "^", "v", "<", ">"]
+    manifold.find_clinics(n_points = 2)
+    
+    marker = ["+", "o", "s", "p", "P", "*", "X", "D", "d", "^", "v", "<", ">"]
     for i, clinic in enumerate(manifold.clinics):
         eps_s_i, eps_u_i = clinic[1:3]
 
@@ -166,7 +159,7 @@ def homoclinics(m, n, amplitude):
 
     fig.set_size_inches(10, 10)
     date = datetime.datetime.now().strftime("%m%d%H%M")
-    dumpname = f"area_{m}_{n}_{amplitude:.3e}_{date}"
+    dumpname = f"area_{m}_{n}_{amplitude:.5f}_{date}"
     with open(dumpname + ".pkl", "wb") as f:
         pickle.dump(fig, f)
     
@@ -190,8 +183,7 @@ def process_func(args):
 
 
 if __name__ == "__main__":
-    amp = np.linspace(0, 0.5, 4)
-    # amp = [0.5]
+    amp = np.linspace(1e-3, 0.1, 3)
     # Create a pool of 4 processes
     with Pool(4) as p:
         results = p.map(process_func, amp)
