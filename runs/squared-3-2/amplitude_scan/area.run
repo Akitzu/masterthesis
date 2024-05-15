@@ -5,4 +5,4 @@
 #SBATCH --time 0:20:00
 #SBATCH --mem 200G
 
-mpiexec -n 72 python run_homocls.py
+mpiexec -n 72 python run.py

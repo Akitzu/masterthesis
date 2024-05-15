@@ -1,6 +1,6 @@
 from mpi4py import MPI
 import numpy as np
-from homoclinics import homoclinics
+from area import homoclinics
 import pickle
 
 comm = MPI.COMM_WORLD
