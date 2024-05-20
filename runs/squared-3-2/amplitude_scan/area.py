@@ -13,11 +13,11 @@ def homoclinics(m, n, amplitude):
     pyoproblem = AnalyticCylindricalBfield(
         6,
         0,
-        1.3,
+        0.8875,
         0.2
     )
 
-    maxwellboltzmann = {"m": m, "n": n, "d": 1/np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": amplitude}
+    maxwellboltzmann = {"m": m, "n": n, "d": 1.75/np.sqrt(2), "type": "maxwell-boltzmann", "amplitude": amplitude}
     pyoproblem.add_perturbation(maxwellboltzmann)
 
     ## Poincare plot
@@ -26,13 +26,13 @@ def homoclinics(m, n, amplitude):
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 15
-    pparams["nPpts"] = 150
+    pparams["nPtrj"] = 30
+    pparams["nPpts"] = 300
     pparams["zeta"] = 0
 
     # Set RZs for the normal (R-only) computation
     pparams["Rbegin"] = pyoproblem._R0+1e-3
-    pparams["Rend"] = 7.5
+    pparams["Rend"] = 9
 
     # Set up the Poincare plot object
     pplot = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)
@@ -59,7 +59,7 @@ def homoclinics(m, n, amplitude):
     fixedpoint = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
 
     # find the X-point
-    guess = [5, 0.]
+    guess = [4., 0.]
     fixedpoint.compute(guess=guess, pp=2, qq=3, sbegin=2, send=10, tol=1e-10)
 
     if fixedpoint.successful:
@@ -75,9 +75,11 @@ def homoclinics(m, n, amplitude):
     iparams["rtol"] = 1e-13
     manifold = Manifold(fixedpoint, pyoproblem, integrator_params=iparams)
 
-    manifold.choose(0,1, directions=["u+", "s+"], sngs=[-1, 1])
+    manifold.choose(0, 1, sngs=[-1, 1])
+
     manifold.compute(neps=100, nintersect=7)
     manifold.plot(ax, directions="u+s+")
+
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     manifold.find_clinics(n_points=4)
@@ -96,6 +98,8 @@ def homoclinics(m, n, amplitude):
     fig.set_size_inches(12, 12)
     ax.set_xlabel(r'R [m]')
     ax.set_ylabel(r'Z [m]')
+    ax.set_xlim(3, 9)
+    ax.set_ylim(-3, 3)
 
     date = datetime.datetime.now().strftime("%m%d%H%M")
     dumpname = f"area_{m}_{n}_{amplitude:.5f}_{date}"
