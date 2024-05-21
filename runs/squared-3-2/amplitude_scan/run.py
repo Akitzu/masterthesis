@@ -7,7 +7,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 # Define the parameters to be run
-amp = np.linspace(1e-6, 1, 100)
+amp = np.linspace(1e-6, 1, 4)
 amp = np.array_split(amp, comm.Get_size())
 
 amp = amp[rank]
@@ -15,7 +15,7 @@ amp = amp[rank]
 # Run the function
 results = []
 for a in amp:
-    m, n = 6, -1
+    m, n = 3, -2
     print(f"{rank} - Running for m = {m}, n = {n}, amplitude = {a:.5f}")
     try:
         result = homoclinics(m, n, a)

@@ -1,0 +1,96 @@
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 127, in use
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 127, in use
+Traceback (most recent call last):
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 127, in use
+Traceback (most recent call last):
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 127, in use
+    rc = rc_params_from_file(style, use_default_template=False)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 852, in rc_params_from_file
+    rc = rc_params_from_file(style, use_default_template=False)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 852, in rc_params_from_file
+    rc = rc_params_from_file(style, use_default_template=False)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 852, in rc_params_from_file
+    rc = rc_params_from_file(style, use_default_template=False)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 852, in rc_params_from_file
+    config_from_file = _rc_params_in_file(fname, fail_on_error=fail_on_error)
+    config_from_file = _rc_params_in_file(fname, fail_on_error=fail_on_error)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 778, in _rc_params_in_file
+    config_from_file = _rc_params_in_file(fname, fail_on_error=fail_on_error)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 778, in _rc_params_in_file
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 778, in _rc_params_in_file
+    config_from_file = _rc_params_in_file(fname, fail_on_error=fail_on_error)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 778, in _rc_params_in_file
+    with _open_file_or_url(fname) as fd:
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/contextlib.py", line 135, in __enter__
+    with _open_file_or_url(fname) as fd:
+    with _open_file_or_url(fname) as fd:
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/contextlib.py", line 135, in __enter__
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/contextlib.py", line 135, in __enter__
+    with _open_file_or_url(fname) as fd:
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/contextlib.py", line 135, in __enter__
+    return next(self.gen)
+    return next(self.gen)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 755, in _open_file_or_url
+    return next(self.gen)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 755, in _open_file_or_url
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 755, in _open_file_or_url
+    with open(fname, encoding=encoding) as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'lateky'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/run.py", line 3, in <module>
+    with open(fname, encoding=encoding) as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'lateky'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/run.py", line 3, in <module>
+    with open(fname, encoding=encoding) as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'lateky'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/run.py", line 3, in <module>
+    return next(self.gen)
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/__init__.py", line 755, in _open_file_or_url
+    with open(fname, encoding=encoding) as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'lateky'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/run.py", line 3, in <module>
+    from area import homoclinics
+    from area import homoclinics
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/area.py", line 4, in <module>
+    from area import homoclinics
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/area.py", line 4, in <module>
+    from area import homoclinics
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/area.py", line 4, in <module>
+  File "/home/lurais/gitclones/masterthesis/runs/toybox-tol-0605/perturbed-18-3/amplitude_scan/area.py", line 4, in <module>
+    plt.style.use('lateky')
+    plt.style.use('lateky')
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 130, in use
+    plt.style.use('lateky')
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 130, in use
+    plt.style.use('lateky')
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 130, in use
+  File "/ssoft/spack/syrah/v3/opt/spack/linux-rhel9-icelake/intel-2021.6.0/python-3.10.4-lxjtd6zhu26hp35teyxtqraskyrkamzs/lib/python3.10/site-packages/matplotlib/style/core.py", line 130, in use
+    raise IOError(
+    raise IOError(
+OSError: 'lateky' not found in the style library and input is not a valid URL or path; see `style.available` for list of available styles
+    raise IOError(
+OSError: 'lateky' not found in the style library and input is not a valid URL or path; see `style.available` for list of available styles
+    raise IOError(
+OSError: 'lateky' not found in the style library and input is not a valid URL or path; see `style.available` for list of available styles
+OSError: 'lateky' not found in the style library and input is not a valid URL or path; see `style.available` for list of available styles
