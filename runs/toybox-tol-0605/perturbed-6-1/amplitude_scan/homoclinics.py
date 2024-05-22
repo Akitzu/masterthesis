@@ -144,13 +144,9 @@ def homoclinics(m, n, amplitude):
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     print("\nFinding homoclinics\n")
-    manifold.find_homoclinic(2.179774577375764e-07, 3.84907705931755e-06, n_s = 7, n_u = 6)
-
-    fund = manifold.fundamental_segment
-    guess_i = [fund[0][1]*np.power(manifold.lambda_s, 1/2), fund[1][0]*np.power(manifold.lambda_u, 1/2)]
-    print(f"initial guess: {guess_i}")
-
-    manifold.find_homoclinic(*guess_i, bounds = fund, n_s=7, n_u=5)
+    manifold.find_homoclinic(2.179774577375764e-07, 3.84907705931755e-06, n_s=7, n_u=6)
+    manifold.find_homoclinic(1.2560522331587575e-06, 2.388481018696467e-05, n_s=7, n_u=5)
+    manifold.order()
 
     print("\nPlotting homoclinics")
     marker = ["+", "o"] #, "s", "p", "P", "*", "X", "D", "d", "^", "v", "<", ">"]

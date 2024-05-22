@@ -72,8 +72,8 @@ def homoclinics(m, n, amplitude):
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 40
-    pparams["nPpts"] = 200
+    pparams["nPtrj"] = 10
+    pparams["nPpts"] = 100
     pparams["zeta"] = 0
 
     # # Set RZs for the normal (R-only) computation
@@ -141,9 +141,10 @@ def homoclinics(m, n, amplitude):
     ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     print("\nFinding homoclinics\n")
-    manifold.find_homoclinic(5.894807073167906e-07, 1.6269141435000552e-06, n_s = 7, n_u = 6)
     manifold.find_clinics(n_points=6)
-    
+    if len(manifold.clinics) != 6:
+        raise ValueError("Not able to find all the clinics")
+
     n_s = manifold.find_clinic_configuration['n_s'] - 1
     n_u = manifold.find_clinic_configuration['n_u']
 
@@ -169,15 +170,15 @@ def homoclinics(m, n, amplitude):
     dumpname = f"area_{m}_{n}_{amplitude:.3e}_{date}"
 
     os.makedirs("figures", exist_ok=True)
-    with open(dumpname + ".pkl", "wb") as f:
+    with open("figures/" + dumpname + ".pkl", "wb") as f:
         pickle.dump(fig, f)
     
-    fig.savefig(dumpname + ".png")
+    fig.savefig("figures/" + dumpname + ".png")
     fig, ax = None, None
     plt.close()
 
-    areas = manifold.resonance_area()
-    return areas
+    manifold.resonance_area()
+    return manifold.areas
 
 # Define a function to be run in each process
 def process_func(args):
@@ -192,7 +193,7 @@ def process_func(args):
 
 
 if __name__ == "__main__":
-    amp = np.linspace(0., 0.1, 4)
+    amp = np.linspace(1e-6, 1, 4)
     # Create a pool of 4 processes
     with Pool(4) as p:
         results = p.map(process_func, amp)
