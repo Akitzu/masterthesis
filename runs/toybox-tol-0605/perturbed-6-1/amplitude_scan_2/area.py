@@ -141,8 +141,8 @@ def homoclinics(m, n, amplitude):
     # ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
     print("\nFinding homoclinics\n")
-    manifold.find_clinics(n_points=6)
-    if len(manifold.clinics) != 6:
+    manifold.find_clinics(n_points=2, tol=1e-6)
+    if len(manifold.clinics) != 2:
         raise ValueError("Not able to find all the clinics")
 
     # n_s = manifold.find_clinic_configuration['n_s'] - 1

@@ -7,7 +7,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 # Define the parameters to be run
-amp = np.linspace(1e-6, 1, 288)
+amp = np.linspace(1e-10, 1, 288)
 amp = np.array_split(amp, comm.Get_size())
 
 amp = amp[rank]
