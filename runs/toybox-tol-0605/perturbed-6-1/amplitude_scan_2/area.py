@@ -182,7 +182,7 @@ def homoclinics(m, n, amplitude):
 
 # Define a function to be run in each process
 def process_func(args):
-    m, n = 6, -1
+    m, n = 12, -2
     amplitude = args
     print(f"Running for m = {m}, n = {n}, amplitude = {amplitude:.5f}")
     try:

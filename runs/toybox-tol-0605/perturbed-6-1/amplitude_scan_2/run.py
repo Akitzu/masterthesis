@@ -15,7 +15,7 @@ amp = amp[rank]
 # Run the function
 results = []
 for a in amp:
-    m, n = 6, -1
+    m, n = 12, -2
     print(f"{rank} - Running for m = {m}, n = {n}, amplitude = {a:.5f}")
     try:
         result = homoclinics(m, n, a)
