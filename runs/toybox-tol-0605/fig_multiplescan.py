@@ -35,6 +35,10 @@ for file in flist:
     r = np.array(r)
     err_by_diff = np.array(err_by_diff)
     # Plot the data
-    plt.errorbar(a[isok], r[isok], err_by_diff[isok], fmt='s', markersize=1)
+    plt.errorbar(a[isok], r[isok], err_by_diff[isok], fmt='s', markersize=3, label=file.split('/')[0])
+
+plt.legend(loc='best')
+plt.xlabel('Amplitude')
+plt.ylabel('Total turnstile area')
 
 plt.show()
