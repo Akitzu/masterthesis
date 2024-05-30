@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --nodes 1
-#SBATCH --ntasks 1
+#SBATCH --ntasks 4
 #SBATCH --cpus-per-task 1
 #SBATCH --time 1:00:00
-#SBATCH --mem 4G
+#SBATCH --mem-per-cpu 4G
 
-python lhd.py
+mpiexec -n 4 python 20240331-05_LHD_coils.py

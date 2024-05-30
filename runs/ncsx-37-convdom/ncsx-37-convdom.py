@@ -19,7 +19,7 @@ ax = fig.get_axes()[0]
 
 ### Convergence domain calculation
 rw = np.linspace(1.2, 1.8, 3)
-zw = np.linspace(-0.7, 0.7, 3)
+zw = np.linspace(0, 0.7, 3)
 
 logging.info(f"rw: [{rw[0]}, {rw[-1]}]")
 logging.info(f"zw: [{zw[0]}, {zw[-1]}]")
