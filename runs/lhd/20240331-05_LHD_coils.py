@@ -403,8 +403,36 @@ proc0_print('Done initializing InterpolatedField.')
 
 
 proc0_print('Beginning field line tracing')
-trace_fieldlines(bsh, 'bsh')
+# trace_fieldlines(bsh, 'bsh')
 #trace_fieldlines(bs, 'bs')
 
 proc0_print("Done. Good bye.")
 proc0_print("========================================")
+
+###############################################################################
+# Searching the fixed points with pyoculus.
+###############################################################################
+if comm_world is not None and comm_world.rank != 0:
+    comm_world.abort()
+
+proc0_print('Setting up the problem')
+from pyoculus.problems import SimsoptBfieldProblem
+pyoproblem = SimsoptBfieldProblem.without_axis([3.9, 0], nfp, bs, interpolate=bsh)
+
+# set up the integrator
+iparams = dict()
+iparams["rtol"] = 1e-10
+
+# set up solver parameters
+pparams = dict()
+pparams["nrestart"] = 0
+pparams["tol"] = 1e-15
+# maximum number of newton iterations
+pparams['niter'] = 100
+pparams['zeta'] = 0.1*np.pi
+# pparams['Z'] = 0.
+
+proc0_print('Searching fixed points')
+from pyoculus.solvers import FixedPoint
+fp_x1 = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_x1.compute(guess=[4.8, 0.0], pp=1, qq=2, sbegin=0.1, send=10, checkonly=True)
