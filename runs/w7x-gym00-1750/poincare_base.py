@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from mpi4py import MPI
 import simsoptpp as sopp
-from simsopt.geo import SurfaceRZFourier # CurveHelical, CurveXYZFourier, curves_to_vtk
+from simsopt.geo import SurfaceRZFourier, SurfaceClassifier # CurveHelical, CurveXYZFourier, curves_to_vtk
 from simsopt.field import BiotSavart
 from simsopt.field import (InterpolatedField, SurfaceClassifier, particles_to_vtk,
                            LevelsetStoppingCriterion, load_coils_from_makegrid_file,
@@ -96,14 +96,13 @@ rank = comm.Get_rank()
 comm_config = np.array_split(startconfigs.reshape(-1,2), comm.Get_size())
 comm_config = comm_config[rank]
 
-#from pyoculus.problems import surf_from_coils
-from simsopt.geo import SurfaceClassifier
-#surf = surf_from_coils(coils, ncoils=7, mpol=5, ntor=5)
+from pyoculus.problems import surf_from_coils
+surf = surf_from_coils(coils, ncoils=7, mpol=5, ntor=5)
 
-surf = SurfaceRZFourier.from_nphi_ntheta(mpol=5, ntor=5, stellsym=True, nfp=5, range="full torus", nphi=64, ntheta=24)
-surf.fit_to_curve(ma, 1.5, flip_theta=False)
+# surf = SurfaceRZFourier.from_nphi_ntheta(mpol=5, ntor=5, stellsym=True, nfp=5, range="full torus", nphi=64, ntheta=24)
+# surf.fit_to_curve(ma, 1.5, flip_theta=False)
 
-surfclassifier = SurfaceClassifier(surf, h=0.03, p=2) 
+surfclassifier = SurfaceClassifier(surf, h=0.1, p=1)
 
 pplane = poincare(ps._mf_B, comm_config, phis, surfclassifier, tmax = 10000, tol = 1e-13, plot=False, comm=comm_world)
 tys, phi_hits = pplane.tys, pplane.phi_hits
