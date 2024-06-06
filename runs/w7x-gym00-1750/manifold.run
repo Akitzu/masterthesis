@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --nodes 1
-#SBATCH --ntasks 72
+#SBATCH --ntasks 72 
 #SBATCH --cpus-per-task 1
 #SBATCH --time 0:30:00
-#SBATCH --mem 200G
+#SBATCH --mem 400G
 
-mpiexec -n 72 python run.py
+mpiexec -n 72 python poincare_base.py

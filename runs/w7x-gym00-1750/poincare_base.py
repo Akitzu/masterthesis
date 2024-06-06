@@ -42,15 +42,15 @@ R0, _, Z0 = ma.gamma()[0,:]
 bs = BiotSavart(coils)
 ps = SimsoptBfieldProblem.without_axis([5.98, 0], nfp, bs)
 R0, Z0 = ps._R0, ps._Z0
-ps = SimsoptBfieldProblem(R0=R0, Z0=Z0, Nfp=nfp, mf=bs, interpolate=True, ncoils=7, mpol=7, ntor=7, n=40)
+ps = SimsoptBfieldProblem(R0=R0, Z0=Z0, Nfp=nfp, mf=bs)
 
-###############################################################################
-# Fixed point and Manifold
-###############################################################################
+################################################################################
+## Fixed point and Manifold
+################################################################################
 
 # set up the integrator
 iparams = dict()
-iparams["rtol"] = 1e-9
+iparams["rtol"] = 1e-12
 
 pparams = dict()
 pparams["nrestart"] = 0
@@ -61,7 +61,7 @@ pparams['niter'] = 100
 fp_x1 = FixedPoint(ps, pparams, integrator_params=iparams)
 fp_x2 = FixedPoint(ps, pparams, integrator_params=iparams)
 
-fp_x1.compute(guess=[5.699569970160485, 0.5256033542571535], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
+fp_x1.compute(guess=[5.6995, 0.5256], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
 fp_x2.compute(guess=[5.883462104879646, 0.6556749703570318], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
 
 # Working on manifold
@@ -71,7 +71,7 @@ iparam["rtol"] = 1e-13
 mp = Manifold(ps, fp_x1, fp_x2, integrator_params=iparam)
 mp.choose(signs=[[1, -1], [-1, 1]], order=False)
 
-neps = 10
+neps = 200
 startconfigs = np.empty((4, neps, 2))
 for ii, onworking in enumerate([mp.inner, mp.outer]):
     # eps_s = mp.find_epsilon(onworking["rfp_s"], onworking["vector_s"], 1e-2, -1)
@@ -96,15 +96,27 @@ rank = comm.Get_rank()
 comm_config = np.array_split(startconfigs.reshape(-1,2), comm.Get_size())
 comm_config = comm_config[rank]
 
-pplane = poincare(ps._mf, comm_config, phis, ps.surfclassifier, tmax = 10000, tol = 1e-13, plot=False, comm=comm_world)
+#from pyoculus.problems import surf_from_coils
+from simsopt.geo import SurfaceClassifier
+#surf = surf_from_coils(coils, ncoils=7, mpol=5, ntor=5)
+
+surf = SurfaceRZFourier.from_nphi_ntheta(mpol=5, ntor=5, stellsym=True, nfp=5, range="full torus", nphi=64, ntheta=24)
+surf.fit_to_curve(ma, 1.5, flip_theta=False)
+
+surfclassifier = SurfaceClassifier(surf, h=0.03, p=2) 
+
+pplane = poincare(ps._mf_B, comm_config, phis, surfclassifier, tmax = 10000, tol = 1e-13, plot=False, comm=comm_world)
 tys, phi_hits = pplane.tys, pplane.phi_hits
 
-tys = comm.gather(tys, root=0)
-phi_hits = comm.gather(phi_hits, root=0)
+tys_list = comm.gather(tys, root=0)
+phi_hits_list = comm.gather(phi_hits, root=0)
+
 
 if comm_world is None or comm_world.rank == 0:
+    tys = [t for ts in tys_list for t in ts]
+    phi_hits = [phi for phis in phi_hits_list for phi in phis]
     with open('manifold.pkl', 'wb') as f:
-            pickle.dump((tys, phi_hits), f)
+        pickle.dump((tys, phi_hits), f)
     
 # fig, ax = pplane.plot([0])
 # ax = ax[0,0]
