@@ -23,6 +23,7 @@ from pyoculus.solvers import FixedPoint, Manifold
 import matplotlib.pyplot as plt
 from horus import poincare
 import pickle
+import sys
 
 latexplot_folder = Path("../../latex/images/plots").absolute()
 saving_folder = Path("figs").absolute()
@@ -33,18 +34,18 @@ from plot_poincare import plot_poincare_simsopt
 ratio = 9/16
 DPI = 300
 file_poincare = "pkl/"
-if os.path.exists(file_poincare):
-    pass
+# if os.path.exists(file_poincare):
+#     pass
 
 file_manifold = "pkl/manifold_circlestop.pkl"
-if os.path.exists(file_manifold):
-    fig, ax = plt.subplots()
-    tys, phi_hits = pickle.load(open(file_manifold, "rb"))
-    phi_hits = [np.array(phis) for phis in phi_hits]
-    plot_poincare_simsopt(phi_hits, ax)
+# if os.path.exists(file_manifold):
+#     fig, ax = plt.subplots()
+#     tys, phi_hits = pickle.load(open(file_manifold, "rb"))
+#     phi_hits = [np.array(phis) for phis in phi_hits]
+#     plot_poincare_simsopt(phi_hits, ax)
 
 ###############################################################################
-# Define the W7X cpnfiguration and set up the pyoculus problem
+# Define the W7X configuration and set up the pyoculus problem
 ###############################################################################
 
 nfp = 5  # Number of field periods
@@ -119,9 +120,10 @@ areas = mp.outer["areas"]
 ###############################################################################
 
 fig, ax = plt.subplots()
-tys, phi_hits = pickle.load(open(file_poincare, "rb"))
-phi_hits = [np.array(phis) for phis in phi_hits]
-plot_poincare_simsopt(phi_hits, ax)
+if os.path.exists(file_poincare):
+    tys, phi_hits = pickle.load(open(file_poincare, "rb"))
+    phi_hits = [np.array(phis) for phis in phi_hits]
+    plot_poincare_simsopt(phi_hits, ax)
 
 histories = mp.outer["clinic_history"]
 marker = ['d', 's']
@@ -170,3 +172,57 @@ ax_potential.hlines(areas[0,0], -0.4, 7.4, color='grey', linestyle='--', zorder=
 ax_potential.text(6.36, -0.0055, f"{areas[0,0]:.3e}", va='center')
 fig_potential.set_dpi(DPI)
 fig_potential.savefig(saving_folder / f"turnstile_area_final.png", bbox_inches='tight', pad_inches=0.1)
+
+###############################################################################
+# Save initial points for manifold tracing
+###############################################################################
+
+rfp_s = mp.outer["rfp_s"]
+rfp_u = mp.outer["rfp_u"]
+lambda_s = mp.outer["lambda_s"]
+lambda_u = mp.outer["lambda_u"]
+vector_s = mp.outer["vector_s"]
+vector_u = mp.outer["vector_u"]
+
+fund = mp.outer["fundamental_segment"]
+eps_s_1, eps_u_1 = fund[0][0], fund[1][0]
+eps_s_2, eps_u_2 = mp.outer["clinics"][1][1:3]
+eps_s_3, eps_u_3 = fund[0][1], fund[1][1]
+
+neps = 2*25+1
+start_eps_s = np.concatenate((
+        np.logspace(
+            np.log(eps_s_1) / np.log(lambda_s),
+            np.log(eps_s_2) / np.log(lambda_s),
+            int(neps/2),
+            base=lambda_s,
+            endpoint=False
+        ),
+        np.logspace(
+            np.log(eps_s_2) / np.log(lambda_s),
+            np.log(eps_s_3) / np.log(lambda_s),
+            int(neps/2)+1,
+            base=lambda_s,
+        )
+    ))
+start_eps_u = np.concatenate((
+        np.logspace(
+            np.log(eps_u_1) / np.log(lambda_u),
+            np.log(eps_u_2) / np.log(lambda_u),
+            int(neps/2),
+            base=lambda_u,
+            endpoint=False
+        ),
+        np.logspace(
+            np.log(eps_u_2) / np.log(lambda_u),
+            np.log(eps_u_3) / np.log(lambda_u),
+            int(neps/2)+1,
+            base=lambda_u,
+        )
+    ))
+
+rz_start_s = (np.ones((neps,1))*rfp_s) + (np.atleast_2d(start_eps_s).T * vector_s)
+rz_start_u = (np.ones((neps,1))*rfp_u) + (np.atleast_2d(start_eps_u).T * vector_u)
+
+np.save("pkl/rz_start_s.npy", rz_start_s)
+np.save("pkl/rz_start_u.npy", rz_start_u)

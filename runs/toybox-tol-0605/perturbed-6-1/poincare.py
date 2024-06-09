@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 50
-    pparams["nPpts"] = 200
+    pparams["nPtrj"] = 100
+    pparams["nPpts"] = 400
     pparams["zeta"] = 0
 
     # # Set RZs for the normal (R-only) computation
@@ -79,8 +79,11 @@ if __name__ == "__main__":
     # pparams["Rend"] = 8.2
 
     # Set RZs for the tweaked (R-Z) computation
+    frac_nf_0 = 0.96
+    nfieldlines, nfieldlines_3 = int(np.ceil(frac_nf_0*pparams["nPtrj"])), int(np.floor((1-frac_nf_0)*pparams["nPtrj"]))+1
+    
     frac_nf_1 = 2/3
-    nfieldlines_1, nfieldlines_2 = int(np.ceil(frac_nf_1*pparams["nPtrj"])), int(np.floor((1-frac_nf_1)*pparams["nPtrj"]))+1
+    nfieldlines_1, nfieldlines_2 = int(np.ceil(frac_nf_1*nfieldlines)), int(np.floor((1-frac_nf_1)*nfieldlines))
 
     # Two interval computation opoint to xpoint then xpoint to coilpoint
     frac_n1 = 3/4
@@ -108,7 +111,12 @@ if __name__ == "__main__":
     ).reshape((1, 2))
     RZs_2 = np.concatenate((RZ1, RZ2))
 
-    RZs = np.concatenate((RZs_1, RZs_2))
+    # Third interval
+    Rs = np.linspace(xpoint[0]+0.1, 8, nfieldlines_3)
+    Zs = np.linspace(xpoint[1]-0.1, -5, nfieldlines_3)
+    RZs_3 = np.array([[r, z] for r, z in zip(Rs, Zs)])
+
+    RZs = np.concatenate((RZs_1, RZs_2, RZs_3))
 
     # Set up the Poincare plot object
     pplot = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)
