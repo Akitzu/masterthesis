@@ -26,13 +26,22 @@ import pickle
 
 latexplot_folder = Path("../../latex/images/plots").absolute()
 saving_folder = Path("figs").absolute()
-sys.path.append(str(latexplot_folder))
-from plot_poincare import plot_poincare_simspot
 
-file_poincare = "pkl/"
-file_manifold = "pkl/"
+sys.path.append(str(latexplot_folder))
+from plot_poincare import plot_poincare_simsopt
+
 ratio = 9/16
 DPI = 300
+file_poincare = "pkl/"
+if os.path.exists(file_poincare):
+    pass
+
+file_manifold = "pkl/manifold_circlestop.pkl"
+if os.path.exists(file_manifold):
+    fig, ax = plt.subplots()
+    tys, phi_hits = pickle.load(open(file_manifold, "rb"))
+    phi_hits = [np.array(phis) for phis in phi_hits]
+    plot_poincare_simsopt(phi_hits, ax)
 
 ###############################################################################
 # Define the W7X cpnfiguration and set up the pyoculus problem

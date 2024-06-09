@@ -45,7 +45,7 @@ coils = coils_via_symmetries(curves, currents_gym, 5, True)
 surf = SurfaceRZFourier.from_nphi_ntheta(mpol=5, ntor=5, stellsym=True, nfp=5, range="full torus", nphi=64, ntheta=24)
 surf.fit_to_curve(ma, 1.5, flip_theta=False)
 
-surfclassifier = SurfaceClassifier(surf, h=0.1, p=1)
+surfclassifier = SurfaceClassifier(surf, h=0.1, p=2)
 
 # Setting the problem
 R0, _, Z0 = ma.gamma()[0,:]
@@ -59,28 +59,28 @@ ps = SimsoptBfieldProblem(R0=R0, Z0=Z0, Nfp=nfp, mf=bs, interpolate=True, surf=s
 ## Find fixed point and set the manifold
 ################################################################################
 
-# set up the integrator
-iparams = dict()
-iparams["rtol"] = 1e-12
+# # set up the integrator
+# iparams = dict()
+# iparams["rtol"] = 1e-12
 
-pparams = dict()
-pparams["nrestart"] = 0
-pparams["tol"] = 1e-18
-pparams['niter'] = 100
+# pparams = dict()
+# pparams["nrestart"] = 0
+# pparams["tol"] = 1e-18
+# pparams['niter'] = 100
 
 
-fp_x1 = FixedPoint(ps, pparams, integrator_params=iparams)
-fp_x2 = FixedPoint(ps, pparams, integrator_params=iparams)
+# fp_x1 = FixedPoint(ps, pparams, integrator_params=iparams)
+# fp_x2 = FixedPoint(ps, pparams, integrator_params=iparams)
 
-fp_x1.compute(guess=[5.69956997, 0.52560335], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
-fp_x2.compute(guess=[5.883462104879646, 0.6556749703570318], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
+# fp_x1.compute(guess=[5.69956997, 0.52560335], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
+# fp_x2.compute(guess=[5.883462104879646, 0.6556749703570318], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
 
-# Working on manifold
-iparam = dict()
-iparam["rtol"] = 1e-13
+# # Working on manifold
+# iparam = dict()
+# iparam["rtol"] = 1e-13
 
-mp = Manifold(ps, fp_x1, fp_x2, integrator_params=iparam)
-mp.choose(signs=[[1, -1], [-1, 1]], order=False)
+# mp = Manifold(ps, fp_x1, fp_x2, integrator_params=iparam)
+# mp.choose(signs=[[1, -1], [-1, 1]], order=False)
 
 ###############################################################################
 # Poincare plot
@@ -114,7 +114,6 @@ mp.choose(signs=[[1, -1], [-1, 1]], order=False)
 # pplane = poincare(ps._mf_B, RZs, phis, ps.surfclassifier, tmax = 10000, tol = 1e-13, plot=False, comm=comm_world)
 
 # pplane.save("poincare.pkl")
-# plt.show()
 
 ###############################################################################
 # Manifold plotting
@@ -128,39 +127,31 @@ mp.choose(signs=[[1, -1], [-1, 1]], order=False)
 #     startconfigs[2*ii,:] = mp.start_config(1e-4, onworking["rfp_s"], onworking["lambda_s"], onworking["vector_s"], neps, -1)
 #     startconfigs[2*ii+1,:] = mp.start_config(1e-4, onworking["rfp_u"], onworking["lambda_u"], onworking["vector_u"], neps)
 
-# proc0_print("Computing the Manifold plot")
-# phis = [(i)*(2*np.pi/nfp) for i in range(nfp)]
+rz_start_s = np.load("pkl/rz_start_s.npy")
+rz_start_u = np.load("pkl/rz_start_u.npy")
+startconfigs = np.concatenate((rz_start_s, rz_start_u)) 
 
-# # Poincare plot
-# logging.basicConfig()
-# logger = logging.getLogger('simsopt.field.tracing')
-# logger.setLevel(1)
+proc0_print("Computing the Manifold plot")
+phis = [(i)*(2*np.pi/nfp) for i in range(nfp)]
 
-# comm = MPI.COMM_WORLD
-# rank = comm.Get_rank()
-# comm_config = np.array_split(startconfigs.reshape(-1,2), comm.Get_size())
-# comm_config = comm_config[rank]
+# Poincare plot
+logging.basicConfig()
+logger = logging.getLogger('simsopt.field.tracing')
+logger.setLevel(1)
 
-# pplane = poincare(ps._mf, comm_config, phis, surfclassifier, tmax = 10000, tol = 1e-13, plot=False, comm=comm_world)
-# tys, phi_hits = pplane.tys, pplane.phi_hits
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+comm_config = np.array_split(startconfigs.reshape(-1,2), comm.Get_size())
+comm_config = comm_config[rank]
 
-# tys_list = comm.gather(tys, root=0)
-# phi_hits_list = comm.gather(phi_hits, root=0)
+pplane = poincare(ps._mf, comm_config, phis, surfclassifier, tmax = 10000, tol = 1e-13, plot=False, comm=comm_world)
+tys, phi_hits = pplane.tys, pplane.phi_hits
 
-# if comm_world is None or comm_world.rank == 0:
-#     tys = [t for ts in tys_list for t in ts]
-#     phi_hits = [phi for phis in phi_hits_list for phi in phis]
-#     with open('manifold.pkl', 'wb') as f:
-#         pickle.dump((tys, phi_hits), f)
+tys_list = comm.gather(tys, root=0)
+phi_hits_list = comm.gather(phi_hits, root=0)
 
-###############################################################################
-# Computation of the turnstile area
-###############################################################################
-
-proc0_print("Finding the heteroclinic points")
-
-mp.onworking = mp.outer
-mp.find_clinic_single(0.0005262477692494645, 0.0011166626256106193, n_s=7, n_u=7)
-mp.find_clinic_single(0.0006491052045732048, 0.0013976539980315229, n_s=7, n_u=6)
-
-mp.turnstile_area()
+if comm_world is None or comm_world.rank == 0:
+    tys = [t for ts in tys_list for t in ts]
+    phi_hits = [phi for phis in phi_hits_list for phi in phis]
+    with open('manifold.pkl', 'wb') as f:
+        pickle.dump((tys, phi_hits), f)
