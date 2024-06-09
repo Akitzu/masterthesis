@@ -56,7 +56,7 @@ n0 = 5
 l0 = 1
 nfp = 10
 
-nquadpoints = 200
+nquadpoints = 300
 order = 1  # Maximum Fourier mode number in the helical coil winding law
 
 curve_helical1 = CurveHelical(
@@ -156,20 +156,20 @@ Rmax = R_major + r_minor * margin
 Rmin = R_major - r_minor * margin
 
 # Set initial locations from which field lines will be traced:
-nR0 = 40
-nphi0 = 39
-nfieldlines = nR0 * nphi0
-R1D = np.concatenate((np.linspace(2.5, 3.6, nR0), np.linspace(4.15, 5, nR0)))
-phi1D = np.linspace(0, 2 * np.pi, nphi0, endpoint=False)
+# nR0 = 40
+# nphi0 = 39
+# nfieldlines = nR0 * nphi0
+# R1D = np.concatenate((np.linspace(2.5, 3.6, nR0), np.linspace(4.15, 5, nR0)))
+# phi1D = np.linspace(0, 2 * np.pi, nphi0, endpoint=False)
+# R0, phi0 = np.meshgrid(R1D, phi1D)
+# X0 = R0 * np.cos(phi0)
+# Y0 = R0 * np.sin(phi0)
+# X0_flat = X0.flatten()
+# Y0_flat = Y0.flatten()
+# initial_conditions = np.array([X0_flat, Y0_flat, np.zeros_like(X0_flat)]).T
 
-R0, phi0 = np.meshgrid(R1D, phi1D)
-X0 = R0 * np.cos(phi0)
-Y0 = R0 * np.sin(phi0)
-X0_flat = X0.flatten()
-Y0_flat = Y0.flatten()
-
-initial_conditions = np.array([X0_flat, Y0_flat, np.zeros_like(X0_flat)]).T
-
+nfieldlines = 40
+initial_conditions = np.zeros((nfieldlines, 3))
 bottom_str = os.path.abspath(__file__) + f"  tol:{tol}  interpolant_n:{interpolant_n}  tmax:{tmax_fl}  nfieldlines: {nfieldlines} degree:{degree}"
 
 # Create a rotating-ellipse surface to use as a stopping condition for field line tracing.
@@ -375,7 +375,7 @@ def trace_fieldlines(bfield, label):
     if comm_world is None or comm_world.rank == 0:
         particles_to_vtk(fieldlines_tys, __file__ + f'fieldlines_{label}')
         radius = margin
-        plot_poincare_data(
+        fig, axs = plot_poincare_data(
             fieldlines_phi_hits, 
             phis, __file__ + f'_{label}.png', 
             dpi=300, 
@@ -384,6 +384,7 @@ def trace_fieldlines(bfield, label):
             s=1,
             #surf=surf1_Poincare,
         )
+    return fig, axs
 
 
 # uncomment this to run tracing using the biot savart field (very slow!)
@@ -403,7 +404,7 @@ proc0_print('Done initializing InterpolatedField.')
 
 
 proc0_print('Beginning field line tracing')
-# trace_fieldlines(bsh, 'bsh')
+# fig, axs = trace_fieldlines(bsh, 'bsh')
 #trace_fieldlines(bs, 'bs')
 
 proc0_print("Done. Good bye.")

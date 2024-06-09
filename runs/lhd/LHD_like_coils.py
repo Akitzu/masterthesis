@@ -1,26 +1,28 @@
 #!/usr/bin/env python
 
-import time
 import os
+import time
 import logging
-from pathlib import Path
 import numpy as np
 import simsoptpp as sopp
-from simsopt.geo import SurfaceRZFourier # CurveHelical, CurveXYZFourier, curves_to_vtk
 from simsopt.field import BiotSavart
 from simsopt.field import (InterpolatedField, SurfaceClassifier, particles_to_vtk,
                            LevelsetStoppingCriterion, load_coils_from_makegrid_file,
                            MinRStoppingCriterion, MaxRStoppingCriterion,
                            MinZStoppingCriterion, MaxZStoppingCriterion,
-                           compute_fieldlines
                            )
+from simsopt.geo import SurfaceRZFourier
 from simsopt.util import proc0_print, comm_world
+from simsopt._core.util import parallel_loop_bounds
 from pyoculus.problems import SimsoptBfieldProblem
 from pyoculus.solvers import FixedPoint
 import matplotlib.pyplot as plt
 
 ###############################################################################
-# Define the LHD-like coils.
+# Define the LHD-like coils. Coil set reproduce by M. Negalho from Y. Suzuki ‘Effect of 
+# Pressure Profile on Stochasticity of Magnetic Field in a Conventional Stellarator’,
+# Plasma Physics and Controlled Fusion 62, no. 10 (August 2020): 104001,
+# https://doi.org/10.1088/1361-6587/ab9a13
 ###############################################################################
 
 coils = load_coils_from_makegrid_file('LHD_data/lhd.coils.txt', order=20)
@@ -31,14 +33,34 @@ nfp = 10  # Number of field periods
 
 ###############################################################################
 # Set up the stopping criteria and initial conditions for field line tracing.
-# Thanks to Matt Landreman for providing this code.
+# Thanks to Matt Landreman for providing the useful script to generate the
+# poincare plot as a tweaked version of simsopt routines.
+#
+# From: Matt Landreman <mattland@umd.edu> 
+# Sent: Tuesday, 28 May 2024 21:19
+# To: Christopher Berg Smiet <christopher.smiet@epfl.ch>
+# Cc: Todd Elder <telder1@umd.edu>; Ludovic Rais <ludovic.rais@epfl.ch>
+# Subject: Re: Optimizing heliotron coils for a sharp separatrix
+#
+#
+# Certainly, feel free.
+#
+#
+# On Tue, May 28, 2024 at 11:55 AM Christopher Berg Smiet <christopher.smiet@epfl.ch> wrote:
+# 
+# > Dear Matt, CC: Todd, Ludo 
+# >
+# > Belatedly, I wanted to thank you very much for this script to generate the coils! I just had a meeting with Todd to get pyoculus running on this, and we are generating an example script building on your the coil generation code on our side to get things started. 
+# >
+# > When our script is ready, can we include your code in it and upload it as a pyoculus example? That would be the easiest way to share with todd.
+#
 ###############################################################################
 
 tmax_fl = 100  # "Time" for field line tracing
-tol = 1e-13
+tol = 1e-15
 degree = 4  # Polynomial degree for interpolating the magnetic field
 
-interpolant_n = 20  # Number of points in each dimension for the interpolant
+interpolant_n = 80  # Number of points in each dimension for the interpolant
 
 # Set the range for the interpolant and the stopping conditions for field line tracing:
 margin = 2
@@ -47,12 +69,24 @@ Rmax = R_major + r_minor * margin
 Rmin = R_major - r_minor * margin
 
 # Set initial locations from which field lines will be traced:
-nfieldlines = 60
-p1 = np.array([3.63, 0.])
-p2 = np.array([3.64, 1.3])
-Rs = np.linspace(p1[0], p2[0], nfieldlines)
-Zs = np.linspace(p1[1], p2[1], nfieldlines)
-initial_conditions = np.array([[r, z] for r, z in zip(Rs.flatten(), Zs.flatten())])
+# nfieldlines = 60
+# p1 = np.array([4.8827, 0.1])
+# p2 = np.array([4.8829, -0.1])
+# Rs = np.linspace(p1[0], p2[0], nfieldlines)
+# Zs = np.linspace(p1[1], p2[1], nfieldlines)
+
+nfieldlines = 20
+# Rs = np.linspace(3.6, 3.9, nfieldlines)
+# Zs = np.linspace(1., 1.3, nfieldlines)
+# Rs = np.linspace(4.8827, 4.8829, nfieldlines)
+# Zs = np.linspace(-0.0001, 0.0001, nfieldlines)
+Rs = np.linspace(4.5, 4.75, nfieldlines)
+Zs = np.linspace(-0.1, 0.1, nfieldlines)
+Rs, Zs = np.meshgrid(Rs, Zs)
+
+
+initial_phi = 0.1*np.pi
+initial_conditions = np.array([[r*np.cos(initial_phi), r*np.sin(initial_phi), z] for r, z in zip(Rs.flatten(), Zs.flatten())])
 
 bottom_str = os.path.abspath(__file__) + f"  tol:{tol}  interpolant_n:{interpolant_n}  tmax:{tmax_fl}  nfieldlines: {nfieldlines} degree:{degree}"
 
@@ -104,6 +138,68 @@ proc0_print('Done initializing InterpolatedField.')
 logging.basicConfig()
 logger = logging.getLogger('simsopt.field.tracing')
 logger.setLevel(1)
+
+# Same as simsopt's compute_fieldlines, but take the initial locations as
+# (x,y,z) values instead of (R, Z) values.
+def compute_fieldlines(field, xyz_inits, tmax=200, tol=1e-7, phis=[], stopping_criteria=[], comm=None):
+    r"""
+    Compute magnetic field lines by solving
+
+    .. math::
+
+        [\dot x, \dot y, \dot z] = B(x, y, z)
+
+    Args:
+        field: the magnetic field :math:`B`
+        R0: list of radial components of initial points
+        Z0: list of vertical components of initial points
+        tmax: for how long to trace. will do roughly ``|B|*tmax/(2*pi*r0)`` revolutions of the device
+        tol: tolerance for the adaptive ode solver
+        phis: list of angles in [0, 2pi] for which intersection with the plane
+              corresponding to that phi should be computed
+        stopping_criteria: list of stopping criteria, mostly used in
+                           combination with the ``LevelsetStoppingCriterion``
+                           accessed via :obj:`simsopt.field.tracing.SurfaceClassifier`.
+
+    Returns: 2 element tuple containing
+        - ``res_tys``:
+            A list of numpy arrays (one for each particle) describing the
+            solution over time. The numpy array is of shape (ntimesteps, 4).
+            Each row contains the time and
+            the position, i.e.`[t, x, y, z]`.
+        - ``res_phi_hits``:
+            A list of numpy arrays (one for each particle) containing
+            information on each time the particle hits one of the phi planes or
+            one of the stopping criteria. Each row of the array contains
+            `[time, idx, x, y, z]`, where `idx` tells us which of the `phis`
+            or `stopping_criteria` was hit.  If `idx>=0`, then `phis[int(idx)]`
+            was hit. If `idx<0`, then `stopping_criteria[int(-idx)-1]` was hit.
+    """
+    nlines = xyz_inits.shape[0]
+    # assert len(R0) == len(Z0)
+    # assert len(R0) == len(phi0)
+    # nlines = len(R0)
+    # xyz_inits = np.zeros((nlines, 3))
+    # R0 = np.asarray(R0)
+    # phi0 = np.asarray(phi0)
+    # xyz_inits[:, 0] = R0 * np.cos(phi0)
+    # xyz_inits[:, 1] = R0 * np.sin(phi0)
+    # xyz_inits[:, 2] = np.asarray(Z0)
+    res_tys = []
+    res_phi_hits = []
+    first, last = parallel_loop_bounds(comm, nlines)
+    for i in range(first, last):
+        res_ty, res_phi_hit = sopp.fieldline_tracing(
+            field, xyz_inits[i, :],
+            tmax, tol, phis=phis, stopping_criteria=stopping_criteria)
+        res_tys.append(np.asarray(res_ty))
+        res_phi_hits.append(np.asarray(res_phi_hit))
+        dtavg = res_ty[-1][0]/len(res_ty)
+        logger.debug(f"{i+1:3d}/{nlines}, t_final={res_ty[-1][0]}, average timestep {dtavg:.10f}s")
+    if comm is not None:
+        res_tys = [i for o in comm.allgather(res_tys) for i in o]
+        res_phi_hits = [i for o in comm.allgather(res_phi_hits) for i in o]
+    return res_tys, res_phi_hits
 
 # Same as simsopt's plot_poincare_data, but with consistent colors between
 # subplots, also plotting stellarator-symmetric points, and exploiting nfp
@@ -186,26 +282,26 @@ def plot_poincare_data(fieldlines_phi_hits, phis, filename, mark_lost=False, asp
 
             axs[new_row, col].scatter(r, -data_this_phi[:, 4], marker=marker, s=s, linewidths=0, c=color)
 
-
         #plt.rc('axes', axisbelow=True)
 
     #plt.figtext(0.5, 0.995, os.path.abspath(coils_filename), ha="center", va="top", fontsize=4)
     plt.figtext(0.5, 0.005, bottom_str, ha="center", va="bottom", fontsize=6)
     plt.tight_layout()
     plt.savefig(filename, dpi=dpi)
+    return fig, axs
 
 def trace_fieldlines(bfield, label):
     t1 = time.time()
     phis = [(i/4)*(2*np.pi/nfp) for i in range(4 * nfp)]
     fieldlines_tys, fieldlines_phi_hits = compute_fieldlines(
-        bfield, initial_conditions[:,0], initial_conditions[:,1], tmax=tmax_fl, tol=tol, comm=comm_world,
+        bfield, initial_conditions, tmax=tmax_fl, tol=tol, comm=comm_world,
         phis=phis, stopping_criteria=stopping_criteria)
     t2 = time.time()
     proc0_print(f"Time for fieldline tracing={t2-t1:.3f}s. Num steps={sum([len(l) for l in fieldlines_tys])//nfieldlines}", flush=True)
     if comm_world is None or comm_world.rank == 0:
         # particles_to_vtk(fieldlines_tys, __file__ + f'fieldlines_{label}')
         radius = margin
-        plot_poincare_data(
+        fig, axs = plot_poincare_data(
             fieldlines_phi_hits, 
             phis, __file__ + f'_{label}.png', 
             dpi=300, 
@@ -214,11 +310,11 @@ def trace_fieldlines(bfield, label):
             s=1,
             #surf=surf1_Poincare,
         )
-
+    return fig, axs
 
 import datetime
-label = "bsh_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-# trace_fieldlines(bsh, label)
+label = "bsh_" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
+fig, axs = trace_fieldlines(bsh, label)
 
 ###############################################################################
 # Searching the fixed points with pyoculus.
@@ -233,40 +329,122 @@ pyoproblem = SimsoptBfieldProblem.without_axis([3.6, 0], nfp, bs)
 iparams = dict()
 iparams["type"] = "dop853"
 iparams["rtol"] = 1e-10
-# iparams["min_step"] = 1e-16
-# iparams["verbosity "] = 1
 
 # set up solver parameters
 pparams = dict()
 pparams["nrestart"] = 0
 pparams["tol"] = 1e-15
+# phi of the poincare section considered
+pparams['zeta'] = 0.1*np.pi
 # maximum number of newton iterations
 pparams['niter'] = 100
-pparams['zeta'] = 0.
+# If set and checkonly == False than the solver will use toroidal coordinates to try to find the fixed point
 # pparams['Z'] = 0.
 
 proc0_print('Searching fixed points')
-fp_x1 = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-# fp_x1.compute(guess=[, 0.7], pp=1, qq=2, sbegin=0.1, send=10, checkonly=True)
-# fp_x1.compute(guess=[, 0.7], pp=1, qq=2, sbegin=0.1, send=10, checkonly=True)
+# Using checkonly we can search for fixed points only with the m=qq number
+# so the value of pp not used (and only checked in future final implementation)
+
+# One fixed point seem to be really close to [4.8827, 0.]
+# fp_x1 = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_x1.compute(guess=[4.5394, 0.], pp=1, qq=14, sbegin=0.1, send=10, checkonly=True)
+
+# Island m = 7, n = ?
+fp_7o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_7o.compute(guess=[4.5394, 0.], pp=1, qq=7, sbegin=2, send=5.5, checkonly=True)
+fp_7x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_7x.compute(guess=[4.45012135, -0.15772282], pp=1, qq=7, sbegin=2, send=5.5, checkonly=True)
+
+# Island m = 13, n = ?
+fp_13o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_13o.compute(guess=[4.54492985, -0.07441066], pp=1, qq=13, sbegin=2, send=5.5, checkonly=True)
+fp_13x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_13x.compute(guess=[4.56964356, 0.], pp=1, qq=13, sbegin=2, send=5.5, checkonly=True)
+
+# Island m = 6, n = ?
+fp_6o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_6o.compute(guess=[4.49199436, -0.1779669], pp=1, qq=6, sbegin=2, send=5.5, checkonly=True)
+fp_6x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_6x.compute(guess=[4.60062493, 0.], pp=1, qq=6, sbegin=2, send=5.5, checkonly=True)
+
+# Island m = 19, n = ?
+fp_19o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_19o.compute(guess=[4.58393511, 0.], pp=1, qq=19, sbegin=2, send=5.5, checkonly=True)
+fp_19x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+fp_19x.compute(guess=[4.5757102, -0.03811962], pp=1, qq=19, sbegin=2, send=5.5, checkonly=True)
+
+
+colors = ['red', 'green', 'blue', 'yellow']
+for ii, fp in enumerate([fp_7o, fp_13o, fp_6o, fp_19o]):
+    results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    for rr in results:
+        axs[1,0].scatter(rr[0], rr[2], marker="o", edgecolors="black", linewidths=1, color=colors[ii])
+
+for ii, fp in enumerate([fp_7x, fp_13x, fp_6x, fp_19x]):
+    results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    for rr in results:
+        axs[1,0].scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1, color=colors[ii])
+proc0_print(f'GreenesResidues for X-points:\n m=7 - {fp_7x.GreenesResidue}\n m=13 - {fp_13x.GreenesResidue}, \n m=6 - {fp_6x.GreenesResidue}, \n m=19 - {fp_19x.GreenesResidue}')
+
+
+axs[1,0].set_xlim(3.9, 4.7)
+axs[1,0].set_ylim(-0.5, 0.1)
+fig.savefig(__file__ + f'_fixed_points_{label}.png', dpi=300)
+
 
 from pyoculus.integrators import RKIntegrator
 iparams = dict()
 iparams["rtol"] = 1e-13
-iparams["ode"] = pyoproblem.f_RZ
+iparams["ode"] = pyoproblem.f
 iparams["type"] = "dop853"
-
 integrator = RKIntegrator(iparams)
 
-def evolution(rz, phi0 = 0, dphi = 2*2*np.pi/10):
-    integrator.set_initial_value(phi0, rz)
-    rz_e = integrator.integrate(phi0+dphi)
-    return rz_e # - rz
+def evolution(rz, phi0 = 0, dzeta = 2*np.pi/10, pp = 10, qq = 2):
+    print(rz)
+    theta0 = np.arctan2(rz[1]-pyoproblem._Z0, rz[0]-pyoproblem._R0)
+    ic = np.array([rz[0], rz[1], pyoproblem._R0, pyoproblem._Z0, theta0])
+    integrator.set_initial_value(phi0, ic)
+    try:
+        out = integrator.integrate(phi0+qq*dzeta)
+    except:
+        out = [np.nan, np.nan, np.nan, np.nan, np.nan]
+    print(out[:2])
+    # return rz_e # - rz
+    return out[4] + dzeta * pp
 
 def Bphi(r, z, phi = 0):
     xyz = np.array([r*np.cos(phi), r*np.sin(phi), z])
     B = pyoproblem.B(xyz)
     return np.matmul(pyoproblem._inv_Jacobian(r, phi, z), B)[1]
+
+# checking
+# R = np.linspace(3.5, 3.8, 40)
+# Z = np.linspace(0.3, 1.2, 40)
+
+# from horus import convergence_domain
+# convdom_checkonly = convergence_domain(pyoproblem, R, Z, rtol = 1e-13, tol = 1e-8, eps = 1e-5, checkonly = True, pp=2, qq=1)
+
+# class TMPClass():
+#     def __init__(self):
+#         pass
+
+# fixed_points = list()
+# for fp in convdom_checkonly[1]:
+#     fp_tmp = TMPClass()
+#     fp_tmp.x = fp.x
+#     fp_tmp.y = fp.y
+#     fp_tmp.z = fp.z
+#     fp_tmp.successful = fp.successful
+#     fp_tmp.GreenesResidue = fp.GreenesResidue
+#     fixed_points.append(fp_tmp)
+# fixed_points = np.array(fixed_points, dtype=object)
+
+# with open("convdom_arr.npy", "wb") as f:
+#     np.save(f, convdom_checkonly[0][:-1].astype(float))
+
+# with open("convdom_fps.npy", "wb") as f:
+#     np.save(f, fixed_points)
+
 
 # from scipy.optimize import root
 # root(evolution, [3.6, 1])

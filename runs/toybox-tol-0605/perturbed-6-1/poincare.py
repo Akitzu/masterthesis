@@ -120,28 +120,4 @@ if __name__ == "__main__":
     pplot.compute(RZs)
 
     ### Plotting the results
-
-    fig, ax = pplot.plot(marker=".", s=1)
-    # ax.set_xlim(3.0, 3.5)
-    # ax.set_ylim(-2.5, -0.3)
-
-    ax.scatter(
-        pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
-    )
-    if fp.successful:
-        ax.scatter(
-            results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
-        )
-    ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
-
-    if args.save:
-        fig.set_size_inches(10, 6) 
-        date = datetime.datetime.now().strftime("%m%d%H%M")
-        dumpname = f"poincare_{date}"
-        with open(dumpname + ".pkl", "wb") as f:
-            pickle.dump(fig, f)
-
-    plt.show()
-    
-    if args.save:
-        fig.savefig(dumpname + ".png")
+    pplot.save("poincare.npy")
