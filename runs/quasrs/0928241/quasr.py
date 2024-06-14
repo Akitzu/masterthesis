@@ -6,6 +6,14 @@ from simsopt._core import load
 from horus import poincare
 import pandas as pd
 import numpy as np
+from pathlib import Path
+import sys
+
+latexplot_folder = Path("../../../latex/images/plots").absolute()
+saving_folder = Path("figs").absolute()
+
+sys.path.append(str(latexplot_folder))
+from plot_poincare import plot_poincare_simsopt
 
 surfaces, ma, coils = load(f'serial0928241.json')
 
@@ -25,7 +33,8 @@ R0, _, Z0 = ma.gamma()[0,:]
 ps = SimsoptBfieldProblem.from_coils(R0=R0, Z0=Z0, Nfp=3, coils=coils, interpolate=True, surf=s)
 
 # Poincare plot
-phis = [0]    #[(i / 4) * (2 * np.pi / nfp) for i in range(4)]
+nfp = 3
+phis = [i* (2 * np.pi / 3) for i in range(nfp)]
 
 nfieldlines = 10
 Rs = np.linspace(0.884, 1.2, nfieldlines)
@@ -57,9 +66,15 @@ Zs = np.linspace(p1[1], p2[1], nfieldlines)
 RZs2 = np.array([[r, z] for r, z in zip(Rs.flatten(), Zs.flatten())])
 RZs = np.concatenate((RZs, RZs2))
 
-pplane = poincare(ps._mf_B, RZs, phis, ps.surfclassifier, tmax = 15000, tol = 1e-10, plot=False)
-fig, ax = pplane.plot(phis)
-ax = ax[0,0]
+pplane = poincare(ps._mf_B, RZs, phis, ps.surfclassifier, tmax = 1000, tol = 1e-11, plot=False)
+pplane.save("poincare_0928241.pkl")
+
+fig, ax = plt.subplots()
+plot_poincare_simsopt(pplane.phi_hits, ax, color=None)
+ax.set_xlim(0.3, 1.6)
+ax.set_ylim(-0.35, 0.35)
+
+fig.savefig(saving_folder / "poincare_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
 # Finding all fixedpoints
 
@@ -86,14 +101,16 @@ fp11_x1.compute(guess=[1.43378117, 0.05140443], pp=3, qq=6, sbegin=0.4, send=1.6
 fp11_x2 = FixedPoint(ps, pparams, integrator_params=iparams)
 fp11_x2.compute(guess=[1.43378117, -0.05140443], pp=3, qq=6, sbegin=0.4, send=1.6, checkonly=True)
 
-for fp in [fp11_x1, fp11_x2]:
-    results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
-    for rr in results11:
-        ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1)
 for fp in [fp11_o1, fp11_o2, fp11_o3, fp11_o4]:
     results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
     for rr in results11:
         ax.scatter(rr[0], rr[2], marker="o", edgecolors="black", linewidths=1)
+fig.savefig(saving_folder / "fixedpoint_o_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
+for fp in [fp11_x1, fp11_x2]:
+    results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    for rr in results11:
+        ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1)
+fig.savefig(saving_folder / "fixedpoint_ox_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
 data = [
     {'r': fp11_x1.x[0], 'z': fp11_x1.z[0], 'GreenesResidue': fp11_x1.GreenesResidue},
@@ -113,7 +130,15 @@ mp = Manifold(ps, fp11_x2, fp11_x1, integrator_params=iparam)
 mp.choose(signs=[[1, 1],[1, -1]])
 
 mp.compute(nintersect = 4, epsilon=1e-6, neps = 20)
-mp.plot(ax=ax)
+
+ax.set_xlim(1.3, 1.6)
+ax.set_ylim(-0.1, 0.1)
+
+mp.plot(ax=ax, directions="isiu")
+fig.savefig(saving_folder / "manifold_inner_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
+
+mp.plot(ax=ax, directions="osou")
+fig.savefig(saving_folder / "manifold_outer_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
 # Inner manifold
 print("Working on Inner manifold")
@@ -130,7 +155,9 @@ for i, clinic in enumerate(mp.onworking["clinics"]):
     eps_s_i, eps_u_i = clinic[1:3]
     
     hu_i = mp.integrate(mp.onworking["rfp_u"] + eps_u_i * mp.onworking["vector_u"], n_u, 1)
-    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
+    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=20, label=f'$h_{i+1}$')
+
+fig.savefig(saving_folder / "inner_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
 # Outer manifold
 print("Working on Outer manifold")
@@ -139,17 +166,24 @@ mp.find_clinic_single(0.0015488037705831256, 0.0015488037607238807, n_s=2, n_u=2
 mp.find_clinic_single(0.0006060200774938109, 0.0006060193763593331, n_s=3, n_u=2)
 mp.turnstile_area()
 
+inner_areas = mp.inner["areas"]
+np.save("inner_areas_0928241.npy", inner_areas)
+outer_areas = mp.outer["areas"]
+np.save("outer_areas_0928241.npy", outer_areas)
+
 for i, clinic in enumerate(mp.onworking["clinics"]):
     eps_s_i, eps_u_i = clinic[1:3]
     
     hu_i = mp.integrate(mp.onworking["rfp_u"] + eps_u_i * mp.onworking["vector_u"], n_u, 1)
-    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
+    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="red", edgecolor='cyan', zorder=20, label=f'$h_{i+1}$')
+
+fig.savefig(saving_folder / "outer_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
 # Alternating hyperbolic point
 
-mp_2 = Manifold(ps, fp11_o2, integrator_params=iparam)
-mp_2.choose(signs=[[1, 1], [1, -1]])
-mp_2.compute(nintersect = 4, epsilon=1e-6, neps = 20, directions="inner")
+# mp_2 = Manifold(ps, fp11_o2, fp11_o2, integrator_params=iparam)
+# mp_2.choose(signs=[[1, 1], [1, -1]])
+# mp_2.compute(nintersect = 4, epsilon=1e-6, neps = 20, directions="inner")
 # mp_2.plot(ax=ax)
 
 # Convergence figure
@@ -160,12 +194,14 @@ fig_conv, ax_conv = plt.subplots()
 for ii, pot in enumerate(mp.inner["potential_integrations"]):
     ns = min(len(pot[0]), len(pot[1]))
     # ar[ii,:] = pot[0][1:ns]-pot[1][:ns-1]
-    ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=10)
+    ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=20)
 
 for ii, pot in enumerate(mp.outer["potential_integrations"]):
     ns = min(len(pot[0]), len(pot[1]))
     # ar[ii,:] = pot[0][1:ns]-pot[1][:ns-1]
-    ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=10)
+    ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=20)
 
 ax_conv.set_xlabel('Iteration')
 ax_conv.set_ylabel('Potential integration')
+
+fig_conv.savefig(saving_folder / "convergence_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)

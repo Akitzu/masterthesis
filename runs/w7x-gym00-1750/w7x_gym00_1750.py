@@ -31,18 +31,11 @@ saving_folder = Path("figs").absolute()
 sys.path.append(str(latexplot_folder))
 from plot_poincare import plot_poincare_simsopt
 
-ratio = 9/16
+ratio = 16/9
 DPI = 300
-file_poincare = "pkl/"
-# if os.path.exists(file_poincare):
-#     pass
-
-file_manifold = "pkl/manifold_circlestop.pkl"
-# if os.path.exists(file_manifold):
-#     fig, ax = plt.subplots()
-#     tys, phi_hits = pickle.load(open(file_manifold, "rb"))
-#     phi_hits = [np.array(phis) for phis in phi_hits]
-#     plot_poincare_simsopt(phi_hits, ax)
+file_poincare = "pkl/gym00_1750.pkl"
+file_manifold_stable = "pkl/manifold_stable.pkl"
+file_manifold_unstable = "pkl/manifold_unstable.pkl"
 
 ###############################################################################
 # Define the W7X configuration and set up the pyoculus problem
@@ -79,6 +72,15 @@ ps = SimsoptBfieldProblem(R0=R0, Z0=Z0, Nfp=nfp, mf=bs, interpolate=True, surf=s
 ## Find fixed point and set the manifold
 ################################################################################
 
+fig, ax = plt.subplots()
+if os.path.exists(file_poincare):
+    tys, phi_hits = pickle.load(open(file_poincare, "rb"))
+    plot_poincare_simsopt(phi_hits, ax)
+    tys, phi_hits = pickle.load(open(file_manifold_stable, "rb"))
+    plot_poincare_simsopt(phi_hits, ax, color='green')
+    tys, phi_hits = pickle.load(open(file_manifold_unstable, "rb"))
+    plot_poincare_simsopt(phi_hits, ax, color='red')
+
 # set up the integrator
 iparams = dict()
 iparams["rtol"] = 1e-12
@@ -94,6 +96,11 @@ fp_x2 = FixedPoint(ps, pparams, integrator_params=iparams)
 
 fp_x1.compute(guess=[5.69956997, 0.52560335], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
 fp_x2.compute(guess=[5.883462104879646, 0.6556749703570318], pp=5, qq=4, sbegin=5.2, send=6.2, checkonly=True)
+
+results_x = [list(p) for p in zip(fp_x1.x, fp_x1.y, fp_x1.z)]
+for rr in results_x:
+    ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1)
+fig.savefig(saving_folder / "gym99_1750_fixedpoints.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
 
 # Working on manifold
 iparam = dict()
@@ -115,15 +122,29 @@ mp.find_clinic_single(0.0006491052045732048, 0.0013976539980315229, n_s=7, n_u=6
 mp.turnstile_area()
 areas = mp.outer["areas"]
 
+mp.onworking = mp.inner
+mp.find_clinic_single(0.0009232307475864197, 0.0009969436196850716, method="lm")
+mp.find_clinics_single(0.0011721658811519728, 0.0020577144928870914, n_s=6, n_u=5)
+
+mp.turnstile_area()
+
+B_phi_0 = ps.B([ps._R0, 0., ps._Z0])[1] * ps._R0
+
+np.save("area_outer.npy", mp.outer["areas"])
+np.save("area_inner.npy", mp.inner["areas"])
+
+# import pandas as pd
+# data = [
+#     {"type": "inner", "area": inner_areas[inner_areas > 0].sum(), "Error_by_diff": manifold.inner["areas"][:, 1][inner_areas > 0].sum(), "Error_by_estim": manifold.inner["areas"][:, 2][inner_areas > 0].sum(), "total_sum": inner_areas.sum()},
+#     {"type": "outer", "area": outer_areas[outer_areas > 0].sum(), "Error_by_diff": manifold.outer["areas"][:, 1][outer_areas > 0].sum(), "Error_by_estim": manifold.outer["areas"][:, 2][outer_areas > 0].sum(), "total_sum": outer_areas.sum()},
+# ]
+
+# df = pd.DataFrame(data)
+# df.to_csv("areas.csv")
+
 ###############################################################################
 # Plotting clinic evolution
 ###############################################################################
-
-fig, ax = plt.subplots()
-if os.path.exists(file_poincare):
-    tys, phi_hits = pickle.load(open(file_poincare, "rb"))
-    phi_hits = [np.array(phis) for phis in phi_hits]
-    plot_poincare_simsopt(phi_hits, ax)
 
 histories = mp.outer["clinic_history"]
 marker = ['d', 's']
@@ -154,75 +175,88 @@ for jj in range(8):
 potentials = mp.outer["potential_integrations"]
 
 fig_potential, ax_potential = plt.subplots()
-ax_potential.set_xlim(-0.4, 7.4)
+ax_potential.set_xlim(0.6, 8.4)
 ax_potential.set_ylim(-0.0079, 0.0104)
+ax_potential.set_xlabel(r"Integration", fontsize=16)
+ax_potential.set_ylabel(r"Turnstile flux", fontsize=16)
 
 h1_sum, h2_sum = 0, 0
+sum_array = np.empty(8)
 for ii in range(8):
     h1_sum += potentials[0][0][ii]
     h1_sum -= potentials[0][1][ii]
     h2_sum += potentials[1][0][ii]
     h2_sum -= potentials[1][1][ii]
 
-    ax_potential.scatter(ii, h2_sum-h1_sum, color="tab:blue", zorder=10)
+    sum_array[ii] = h2_sum-h1_sum
+    ax_potential.scatter(ii+1, h2_sum-h1_sum, color="tab:blue", zorder=10)
     fig_potential.set_dpi(DPI)
     fig_potential.savefig(saving_folder / f"turnstile_area_{ii}.png", bbox_inches='tight', pad_inches=0.1)
 
-ax_potential.hlines(areas[0,0], -0.4, 7.4, color='grey', linestyle='--', zorder=10)
-ax_potential.text(6.36, -0.0055, f"{areas[0,0]:.3e}", va='center')
+ax_potential.hlines(areas[0,0], 0.6, 8.4, color='grey', linestyle='--', zorder=10)
+ax_potential.text(7.36, -0.0055, f"{areas[0,0]:.3e}", va='center')
 fig_potential.set_dpi(DPI)
 fig_potential.savefig(saving_folder / f"turnstile_area_final.png", bbox_inches='tight', pad_inches=0.1)
+
+fig_log, ax_log = plt.subplots()
+# ax_log.semilogy(1+np.arange(len(sum_array[1:])), np.abs(sum_array[1:]), marker='o', color='tab:blue')
+ax_log.semilogy(1+np.arange(len(sum_array[1:-1])), np.abs(sum_array[1:-1]-sum_array[-1]), marker='o', color='tab:blue')
+ax_log.set_xlabel(r"Iteration", fontsize=16)
+# ax_log.set_ylabel(r"Action difference $\sum_t \lambda(h^t_2)-\lambda(h^t_1)$", fontsize=16)
+ax_log.set_ylabel(r"Action difference $\sum_t \lambda(h^t_2)-\lambda(h^t_1)$ - $end_{area}$", fontsize=16)
+fig_log.savefig(saving_folder / f"potlog_2.png", bbox_inches='tight', pad_inches=0.1, dpi=DPI)
+
 
 ###############################################################################
 # Save initial points for manifold tracing
 ###############################################################################
 
-rfp_s = mp.outer["rfp_s"]
-rfp_u = mp.outer["rfp_u"]
-lambda_s = mp.outer["lambda_s"]
-lambda_u = mp.outer["lambda_u"]
-vector_s = mp.outer["vector_s"]
-vector_u = mp.outer["vector_u"]
+# rfp_s = mp.outer["rfp_s"]
+# rfp_u = mp.outer["rfp_u"]
+# lambda_s = mp.outer["lambda_s"]
+# lambda_u = mp.outer["lambda_u"]
+# vector_s = mp.outer["vector_s"]
+# vector_u = mp.outer["vector_u"]
 
-fund = mp.outer["fundamental_segment"]
-eps_s_1, eps_u_1 = fund[0][0], fund[1][0]
-eps_s_2, eps_u_2 = mp.outer["clinics"][1][1:3]
-eps_s_3, eps_u_3 = fund[0][1], fund[1][1]
+# fund = mp.outer["fundamental_segment"]
+# eps_s_1, eps_u_1 = fund[0][0], fund[1][0]
+# eps_s_2, eps_u_2 = mp.outer["clinics"][1][1:3]
+# eps_s_3, eps_u_3 = fund[0][1], fund[1][1]
 
-neps = 2*25+1
-start_eps_s = np.concatenate((
-        np.logspace(
-            np.log(eps_s_1) / np.log(lambda_s),
-            np.log(eps_s_2) / np.log(lambda_s),
-            int(neps/2),
-            base=lambda_s,
-            endpoint=False
-        ),
-        np.logspace(
-            np.log(eps_s_2) / np.log(lambda_s),
-            np.log(eps_s_3) / np.log(lambda_s),
-            int(neps/2)+1,
-            base=lambda_s,
-        )
-    ))
-start_eps_u = np.concatenate((
-        np.logspace(
-            np.log(eps_u_1) / np.log(lambda_u),
-            np.log(eps_u_2) / np.log(lambda_u),
-            int(neps/2),
-            base=lambda_u,
-            endpoint=False
-        ),
-        np.logspace(
-            np.log(eps_u_2) / np.log(lambda_u),
-            np.log(eps_u_3) / np.log(lambda_u),
-            int(neps/2)+1,
-            base=lambda_u,
-        )
-    ))
+# neps = 2*25+1
+# start_eps_s = np.concatenate((
+#         np.logspace(
+#             np.log(eps_s_1) / np.log(lambda_s),
+#             np.log(eps_s_2) / np.log(lambda_s),
+#             int(neps/2),
+#             base=lambda_s,
+#             endpoint=False
+#         ),
+#         np.logspace(
+#             np.log(eps_s_2) / np.log(lambda_s),
+#             np.log(eps_s_3) / np.log(lambda_s),
+#             int(neps/2)+1,
+#             base=lambda_s,
+#         )
+#     ))
+# start_eps_u = np.concatenate((
+#         np.logspace(
+#             np.log(eps_u_1) / np.log(lambda_u),
+#             np.log(eps_u_2) / np.log(lambda_u),
+#             int(neps/2),
+#             base=lambda_u,
+#             endpoint=False
+#         ),
+#         np.logspace(
+#             np.log(eps_u_2) / np.log(lambda_u),
+#             np.log(eps_u_3) / np.log(lambda_u),
+#             int(neps/2)+1,
+#             base=lambda_u,
+#         )
+#     ))
 
-rz_start_s = (np.ones((neps,1))*rfp_s) + (np.atleast_2d(start_eps_s).T * vector_s)
-rz_start_u = (np.ones((neps,1))*rfp_u) + (np.atleast_2d(start_eps_u).T * vector_u)
+# rz_start_s = (np.ones((neps,1))*rfp_s) + (np.atleast_2d(start_eps_s).T * vector_s)
+# rz_start_u = (np.ones((neps,1))*rfp_u) + (np.atleast_2d(start_eps_u).T * vector_u)
 
-np.save("pkl/rz_start_s.npy", rz_start_s)
-np.save("pkl/rz_start_u.npy", rz_start_u)
+# np.save("pkl/rz_start_s.npy", rz_start_s)
+# np.save("pkl/rz_start_u.npy", rz_start_u)

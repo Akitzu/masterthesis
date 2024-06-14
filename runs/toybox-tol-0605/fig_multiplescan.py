@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 plt.style.use('lateky')
 
 # Load the data
-flist = ['perturbed-6-1/amplitude_scan_2/results.pkl',
-         'perturbed-12-2/amplitude_scan/results.pkl', 
-         'perturbed-18-3/amplitude_scan/results.pkl']
+# flist = ['perturbed-6-1/amplitude_scan_2/results.pkl']
+# flist = ['perturbed-12-2/amplitude_scan/results.pkl']
+flist = ['perturbed-18-3/amplitude_scan/results.pkl']
 
 for file in flist:
     result = pickle.load(open(file, "rb"))
@@ -38,7 +38,8 @@ for file in flist:
     plt.errorbar(a[isok], r[isok], err_by_diff[isok], fmt='s', markersize=3, label=file.split('/')[0])
 
 plt.legend(loc='best')
-plt.xlabel('Amplitude')
-plt.ylabel('Total turnstile area')
+plt.xlabel('Amplitude', fontsize=16)
+plt.ylabel('Turnstile area', fontsize=16)
+plt.savefig('turnstile_area_18_3.png', dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 plt.show()

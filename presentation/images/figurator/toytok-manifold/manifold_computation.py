@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 
 DPI = 600
+ratio = (6+2.5)/(9.2-3.5)
 
 current_folder = Path('').absolute()
 latexplot_folder = Path("../../../../latex/images/plots").absolute()
@@ -142,7 +143,7 @@ ax.plot(*along_s, '--', color='grey', alpha=0.5, zorder=-2)
 ax.quiver(*rfp, *vector_u, color='red', alpha=0.4, scale=5)
 ax.plot(*along_u, '--', color='grey', alpha=0.5, zorder=-2)
 ax.set_xlim(lims[0][0])
-ax.set_ylim(lims[0][1])
+ax.set_ylim(lims[0][1][0], ratio*(lims[0][0][1]-lims[0][0][0])+lims[0][1][0])
 fig.set_dpi(DPI)
 fig.savefig(saving_folder / "manifold_start_0.png", bbox_inches='tight', pad_inches=0.1)
 
@@ -197,7 +198,7 @@ for i in range(nintersect+1):
 
     # additional settings
     ax.set_xlim(lims[i][0])
-    ax.set_ylim(lims[i][1])
+    ax.set_ylim(lims[i][1][0], ratio*(lims[i][0][1]-lims[i][0][0])+lims[i][1][0])
     fig.set_dpi(DPI)
 
     # Save the figure
@@ -206,9 +207,9 @@ for i in range(nintersect+1):
     plt.close(fig)
 
 ### Plotting the final manifold
-fig, ax = plt.subplots()
-fig, ax = plot_poincare_pyoculus(xydata, ax)
-manifold.compute(nintersect = nintersect, neps = 300,  eps_s=eps_s, eps_u=eps_u, directions='inner')
-manifold.plot(ax, zorder=12)
-fig.set_dpi(DPI)
-fig.savefig(saving_folder / "manifold_final.png", bbox_inches='tight', pad_inches=0.1)
+# fig, ax = plt.subplots()
+# fig, ax = plot_poincare_pyoculus(xydata, ax)
+# manifold.compute(nintersect = nintersect, neps = 300,  eps_s=eps_s, eps_u=eps_u, directions='inner')
+# manifold.plot(ax, zorder=12)
+# fig.set_dpi(DPI)
+# fig.savefig(saving_folder / "manifold_final.png", bbox_inches='tight', pad_inches=0.1)

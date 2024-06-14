@@ -165,7 +165,7 @@ def plot(K, Nint, nev = 200, nx=30, ny=15, dpi=300, neps=800, msize = 3):
 if __name__ == "__main__":
     numb = 10
     Ks = np.linspace(0.1, 0.97, numb)
-    Nints = np.linspace(50, 15, numb, dtype=int)
+    Nints = np.linspace(50, 17, numb, dtype=int)
 
     for k, nint in zip(Ks, Nints):
         print(f"Computing for K={k}, Nint={nint}")

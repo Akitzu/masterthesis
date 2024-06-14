@@ -20,7 +20,6 @@ def plot(K, Nint, nev = 200, nx=30, ny=15, dpi=300, neps=800, msize = 3):
         Ev[i,:,:] = evolved
 
     fig, ax = plt.subplots(dpi=dpi)
-    ax.set_title(f'Standard map, K={K:.3f}')
     ax.set_xlabel(r'$\theta$', fontsize=14)
     ax.set_ylabel(r'$p$', fontsize=14)
     ax.set_aspect('equal')
@@ -85,6 +84,8 @@ if __name__ == "__main__":
     nint = 18
 
     fig, ax = plot(k, nint, nev=20, nx=30, ny=10, neps=200)
+    ax.set_xlim(0.4, 0.6)
+    ax.set_ylim(0.9, 1.1)
 
     nev = 30
     pt_ev_1 = np.empty((nev, 2))
@@ -99,7 +100,11 @@ if __name__ == "__main__":
         if ii > 0:
             p1_plt.set_alpha(0.2)
             p2_plt.set_alpha(0.2)
-        p1_plt = ax.scatter(*p1, marker='p', color='tab:blue', edgecolor='black', zorder=30)
-        p2_plt = ax.scatter(*p2, marker='*', color='tab:brown', edgecolor='black', zorder=30)
-        fig.set_dpi(300)
+        if ii == 2:
+            ax.set_xlim(0, 1)
+            ax.set_ylim(0.5, 1.5)
+        
+        p1_plt = ax.scatter(*p1, marker='p', color='tab:blue', edgecolor='black', s=120, zorder=30, linewidth=1)
+        p2_plt = ax.scatter(*p2, marker='D', color='orangered', edgecolor='black', s=40, zorder=30, linewidth=1)
+        ax.set_title(f'Standard map, K={k:.3f}, nint={ii}')
         fig.savefig(saving_folder / f"runningpoint_{ii}.png")

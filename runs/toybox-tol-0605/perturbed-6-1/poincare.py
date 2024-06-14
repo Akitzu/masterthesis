@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 100
+    pparams["nPtrj"] = 60
     pparams["nPpts"] = 400
     pparams["zeta"] = 0
 

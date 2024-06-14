@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument('-p','--compute-poincare', action='store_true', help='Computing the poincare plot')
     parser.add_argument('-m','--compute-manifold', action='store_true', help='Computing the manifold')
     parser.add_argument('-i','--input-file', type=str, default=None, help='Input file to load the plot')
-    parser.add_argument('-a', '--amplitude', type=float, default=1e-2, help='Amplitude of the perturbation')
+    parser.add_argument('-a', '--amplitude', type=float, default=1e-1, help='Amplitude of the perturbation')
     
     args = parser.parse_args()
 

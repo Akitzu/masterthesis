@@ -25,7 +25,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.6819304"
-     inkscape:cx="405.78373"
+     inkscape:cx="347.22008"
      inkscape:cy="236.0383"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
@@ -35,6 +35,25 @@
      inkscape:current-layer="layer1" />
   <defs
      id="defs2">
+    <marker
+       style="overflow:visible"
+       id="Arrow2"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Arrow2"
+       markerWidth="17.575249"
+       markerHeight="12.782"
+       viewBox="0 0 7.7 5.6"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.7)"
+         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="arrow2L" />
+    </marker>
     <marker
        style="overflow:visible"
        id="Arrow1"
@@ -119,7 +138,7 @@
        style="fill:none;fill-opacity:0.3;stroke:#972110;stroke-width:0.375883;stroke-linecap:round;stroke-miterlimit:2.6;stroke-dasharray:0.375883, 0.563823;stroke-dashoffset:0;stroke-opacity:1"
        d="m 168.6528,58.356746 c 0.10701,2.4783 0.2014,4.707917 0.2014,4.707917"
        id="path7748"
-       inkscape:export-filename="path7748.pdf"
+       inkscape:export-filename="line_tangle.png"
        inkscape:export-xdpi="300"
        inkscape:export-ydpi="300" />
     <path
@@ -261,5 +280,13 @@
          rx="0.64649403"
          ry="0.64649397" />
     </g>
+    <path
+       style="fill:#2119a4;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:2.6;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2)"
+       d="m 142.92904,71.318362 h 25.48425"
+       id="path282" />
+    <path
+       style="fill:#2119a4;stroke:#000000;stroke-width:0.2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:2.6;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow2)"
+       d="M 53.770358,71.276707 H 79.254466"
+       id="path282-2" />
   </g>
 </svg>

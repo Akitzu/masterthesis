@@ -71,8 +71,8 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 25
-    pparams["nPpts"] = 200
+    pparams["nPtrj"] = 60
+    pparams["nPpts"] = 400
     pparams["zeta"] = 0
 
     # # Set RZs for the normal (R-only) computation
@@ -119,30 +119,32 @@ if __name__ == "__main__":
 
     # R-Z computation
     pplot.compute(RZs)
+    # pplot.save("poincare_12_2.npy")
+    pplot.save("poincare_12_2_0.1.npy")
 
     ### Plotting the results
 
-    fig, ax = pplot.plot(marker=".", s=1)
+    # fig, ax = pplot.plot(marker=".", s=1)
     # ax.set_xlim(3.0, 3.5)
     # ax.set_ylim(-2.5, -0.3)
 
-    ax.scatter(
-        pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
-    )
-    if fp.successful:
-        ax.scatter(
-            results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
-        )
-    ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
+    # ax.scatter(
+    #     pyoproblem._R0, pyoproblem._Z0, marker="o", edgecolors="black", linewidths=1
+    # )
+    # if fp.successful:
+    #     ax.scatter(
+    #         results[0][0], results[0][2], marker="X", edgecolors="black", linewidths=1
+    #     )
+    # ax.set_title(f"amplitude = {maxwellboltzmann['amplitude']}, m = {maxwellboltzmann['m']}, n = {maxwellboltzmann['n']}, d = {maxwellboltzmann['d']:.2f}")
 
-    if args.save:
-        fig.set_size_inches(10, 6) 
-        date = datetime.datetime.now().strftime("%m%d%H%M")
-        dumpname = f"poincare_{date}"
-        with open(dumpname + ".pkl", "wb") as f:
-            pickle.dump(fig, f)
+    # if args.save:
+    #     fig.set_size_inches(10, 6) 
+    #     date = datetime.datetime.now().strftime("%m%d%H%M")
+    #     dumpname = f"poincare_{date}"
+    #     with open(dumpname + ".pkl", "wb") as f:
+    #         pickle.dump(fig, f)
 
-    plt.show()
+    # plt.show()
     
-    if args.save:
-        fig.savefig(dumpname + ".png")
+    # if args.save:
+    #     fig.savefig(dumpname + ".png")
