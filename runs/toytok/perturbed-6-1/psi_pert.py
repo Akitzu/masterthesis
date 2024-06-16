@@ -71,11 +71,11 @@ RZ_manifold = np.array([out[::each], out[1::each]]).T
 # # Adding perturbation after the object is created uses the found axis as center point
 pyoproblem.add_perturbation(maxwellboltzmann)
 
-xydata = np.load("../toytok/poincare_cleaner.npy")
+xydata = np.load("data/unperturbed.npy")
 fig, ax = plt.subplots()
 plot_poincare_pyoculus(xydata, ax, linewidths=0.1, zorder=10)
 
 pyoproblem.plot_intensities(ax = ax, rw=[3.5, 9.2], zw=[-6, 2.5], nl=[200, 200], RZ_manifold = RZ_manifold, N_levels=200, alpha = 0.5, zorder=11)
 
-# fig.savefig("perturbation.png", dpi=300, bbox_inches="tight", pad_inches=0.1) 
-# fig.savefig("perturbation.pdf", dpi=300, bbox_inches="tight", pad_inches=0.1)
+fig.savefig("figs/psi_pert.png", dpi=300, bbox_inches="tight", pad_inches=0.1) 
+fig.savefig("figs/psi_pert.pdf", dpi=300, bbox_inches="tight", pad_inches=0.1)

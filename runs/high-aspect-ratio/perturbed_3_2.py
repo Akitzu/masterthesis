@@ -4,14 +4,7 @@ import matplotlib.pyplot as plt
 plt.style.use('lateky')
 import numpy as np
 from pathlib import Path
-import sys
-
-DPI = 600
-
-current_folder = Path('').absolute()
-latexplot_folder = Path("../../latex/images/plots").absolute()
-sys.path.append(str(latexplot_folder))
-from plot_poincare import plot_poincare_pyoculus
+from horus import plot_poincare_pyoculus
 
 pyoproblem = AnalyticCylindricalBfield(
     6,
@@ -41,16 +34,20 @@ pparams["Rend"] = 8.5
 pplot_perturbed = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)
 
 # # R-only computation
-# pplot_perturbed.compute()
+pplot_perturbed.compute()
 
 # fig, ax = pplot_perturbed.plot(marker=".", s=1)
-pplot_perturbed.save("poincare.npy")
+pplot_perturbed.save("data/perturbed_3_2.npy")
 
 fig, ax = plt.subplots()
-xydata = np.load("poincare.npy")
+xydata = np.load("data/perturbed_3_2.npy")
 plot_poincare_pyoculus(xydata, ax, xlims=None, ylims=None, linewidths=0.3)
 
-fig.savefig("figs/poincare_plot.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+ax.set_xlim(3.8, 8.2)
+ax.set_ylim(-2.2, 2.2)
+
+fig.savefig("figs/perturbed_3_2.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig("figs/perturbed_3_2.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 guess = [4.2, 0.]
 # set up the integrator for the FixedPoint
@@ -81,6 +78,7 @@ fp_x2.compute(guess=[6.44042536414122, 1.7065049712562115], pp=2, qq=3, sbegin=2
 for rr in results:
     ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1)
 fig.savefig("figs/fixedpoints.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig("figs/fixedpoints.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 iparams = dict()
 iparams["rtol"] = 1e-13
@@ -91,10 +89,12 @@ manifold.choose(signs=[[1, -1], [-1, 1]])
 manifold.compute(neps=30, nintersect=8, directions="inner")
 manifold.plot(ax=ax, directions="isiu")
 fig.savefig("figs/inner.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig("figs/inner.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 manifold.compute(neps=30, nintersect=9, directions="outer")
 manifold.plot(ax=ax, directions="osou")
 fig.savefig("figs/outer.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig("figs/outer.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 manifold.onworking = manifold.outer
 manifold.find_clinics(n_points=4)
@@ -108,26 +108,29 @@ confns = manifold.onworking["find_clinic_configuration"]
 n_u = confns["n_u"]+confns["n_s"]+2
 
 manifold.onworking = manifold.inner
-manifold.turnstile_area()
+manifold.turnstile_area(True)
 for i, clinic in enumerate(manifold.onworking["clinics"]):
     eps_s_i, eps_u_i = clinic[1:3]
     
     hu_i = manifold.integrate(manifold.onworking["rfp_u"] + eps_u_i * manifold.onworking["vector_u"], n_u, 1)
     ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
     fig.savefig(f"figs/heteroclinics_inner_{i}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+    fig.savefig(f"figs/heteroclinics_inner_{i}.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 manifold.onworking = manifold.outer
-manifold.turnstile_area()
+manifold.turnstile_area(True)
 for i, clinic in enumerate(manifold.onworking["clinics"]):
     eps_s_i, eps_u_i = clinic[1:3]
     
     hu_i = manifold.integrate(manifold.onworking["rfp_u"] + eps_u_i * manifold.onworking["vector_u"], n_u, 1)
-    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
+    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="red", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
     fig.savefig(f"figs/heteroclinics_outer_{i}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+    fig.savefig(f"figs/heteroclinics_outer_{i}.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 ax.set_xlim(5.2, 6.5)
 ax.set_ylim(1.4, 2.1)
 fig.savefig("figs/closeup.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig("figs/closeup.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 inner_areas = manifold.inner["areas"][:,0]
 outer_areas = manifold.outer["areas"][:,0]
@@ -139,4 +142,4 @@ data = [
 ]
 
 df = pd.DataFrame(data)
-df.to_csv("areas.csv")
+df.to_csv("data/areas.csv")
