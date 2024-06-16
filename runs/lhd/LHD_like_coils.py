@@ -17,6 +17,7 @@ from simsopt._core.util import parallel_loop_bounds
 from pyoculus.problems import SimsoptBfieldProblem
 from pyoculus.solvers import FixedPoint
 import matplotlib.pyplot as plt
+from horus import PoincarePlanes
 
 ###############################################################################
 # Define the LHD-like coils. Coil set reproduce by M. Negalho from Y. Suzuki ‘Effect of 
@@ -69,24 +70,26 @@ Rmax = R_major + r_minor * margin
 Rmin = R_major - r_minor * margin
 
 # Set initial locations from which field lines will be traced:
-# nfieldlines = 60
-# p1 = np.array([4.8827, 0.1])
-# p2 = np.array([4.8829, -0.1])
-# Rs = np.linspace(p1[0], p2[0], nfieldlines)
-# Zs = np.linspace(p1[1], p2[1], nfieldlines)
+nfieldlines = 10
+p1 = np.array([3.5, 0.])
+p2 = np.array([4.498, 0.])
+Rs1 = np.linspace(p1[0], p2[0], nfieldlines)
+Zs1 = np.linspace(p1[1], p2[1], nfieldlines)
 
 nfieldlines = 20
 # Rs = np.linspace(3.6, 3.9, nfieldlines)
 # Zs = np.linspace(1., 1.3, nfieldlines)
 # Rs = np.linspace(4.8827, 4.8829, nfieldlines)
 # Zs = np.linspace(-0.0001, 0.0001, nfieldlines)
-Rs = np.linspace(4.5, 4.75, nfieldlines)
-Zs = np.linspace(-0.1, 0.1, nfieldlines)
-Rs, Zs = np.meshgrid(Rs, Zs)
+Rs2 = np.linspace(4.5, 4.75, nfieldlines)
+Zs2 = np.linspace(-0.1, 0.1, nfieldlines)
+Rs2, Zs2 = np.meshgrid(Rs2, Zs2)
 
+Rs = np.concatenate((Rs1, Rs2.flatten()))
+Zs = np.concatenate((Zs1, Zs2.flatten()))
 
 initial_phi = 0.1*np.pi
-initial_conditions = np.array([[r*np.cos(initial_phi), r*np.sin(initial_phi), z] for r, z in zip(Rs.flatten(), Zs.flatten())])
+initial_conditions = np.array([[r*np.cos(initial_phi), r*np.sin(initial_phi), z] for r, z in zip(Rs, Zs)])
 
 bottom_str = os.path.abspath(__file__) + f"  tol:{tol}  interpolant_n:{interpolant_n}  tmax:{tmax_fl}  nfieldlines: {nfieldlines} degree:{degree}"
 
@@ -310,6 +313,9 @@ def trace_fieldlines(bfield, label):
             s=1,
             #surf=surf1_Poincare,
         )
+        pplane = PoincarePlanes.from_simsopt(fieldlines_tys, fieldlines_phi_hits)
+        pplane.save("pkl/lhd.pkl")
+
     return fig, axs
 
 import datetime
@@ -319,103 +325,103 @@ fig, axs = trace_fieldlines(bsh, label)
 ###############################################################################
 # Searching the fixed points with pyoculus.
 ###############################################################################
-if comm_world is not None and comm_world.rank != 0:
-    comm_world.abort()
+# if comm_world is not None and comm_world.rank != 0:
+#     comm_world.abort()
 
-proc0_print('Setting up the problem')
-pyoproblem = SimsoptBfieldProblem.without_axis([3.6, 0], nfp, bs)
+# proc0_print('Setting up the problem')
+# pyoproblem = SimsoptBfieldProblem.without_axis([3.6, 0], nfp, bs)
 
-# set up the integrator
-iparams = dict()
-iparams["type"] = "dop853"
-iparams["rtol"] = 1e-10
+# # set up the integrator
+# iparams = dict()
+# iparams["type"] = "dop853"
+# iparams["rtol"] = 1e-10
 
-# set up solver parameters
-pparams = dict()
-pparams["nrestart"] = 0
-pparams["tol"] = 1e-15
-# phi of the poincare section considered
-pparams['zeta'] = 0.1*np.pi
-# maximum number of newton iterations
-pparams['niter'] = 100
-# If set and checkonly == False than the solver will use toroidal coordinates to try to find the fixed point
-# pparams['Z'] = 0.
+# # set up solver parameters
+# pparams = dict()
+# pparams["nrestart"] = 0
+# pparams["tol"] = 1e-15
+# # phi of the poincare section considered
+# pparams['zeta'] = 0.1*np.pi
+# # maximum number of newton iterations
+# pparams['niter'] = 100
+# # If set and checkonly == False than the solver will use toroidal coordinates to try to find the fixed point
+# # pparams['Z'] = 0.
 
-proc0_print('Searching fixed points')
-# Using checkonly we can search for fixed points only with the m=qq number
-# so the value of pp not used (and only checked in future final implementation)
+# proc0_print('Searching fixed points')
+# # Using checkonly we can search for fixed points only with the m=qq number
+# # so the value of pp not used (and only checked in future final implementation)
 
-# One fixed point seem to be really close to [4.8827, 0.]
-# fp_x1 = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-# fp_x1.compute(guess=[4.5394, 0.], pp=1, qq=14, sbegin=0.1, send=10, checkonly=True)
+# # One fixed point seem to be really close to [4.8827, 0.]
+# # fp_x1 = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# # fp_x1.compute(guess=[4.5394, 0.], pp=1, qq=14, sbegin=0.1, send=10, checkonly=True)
 
-# Island m = 7, n = ?
-fp_7o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_7o.compute(guess=[4.5394, 0.], pp=1, qq=7, sbegin=2, send=5.5, checkonly=True)
-fp_7x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_7x.compute(guess=[4.45012135, -0.15772282], pp=1, qq=7, sbegin=2, send=5.5, checkonly=True)
+# # Island m = 7, n = ?
+# fp_7o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_7o.compute(guess=[4.5394, 0.], pp=1, qq=7, sbegin=2, send=5.5, checkonly=True)
+# fp_7x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_7x.compute(guess=[4.45012135, -0.15772282], pp=1, qq=7, sbegin=2, send=5.5, checkonly=True)
 
-# Island m = 13, n = ?
-fp_13o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_13o.compute(guess=[4.54492985, -0.07441066], pp=1, qq=13, sbegin=2, send=5.5, checkonly=True)
-fp_13x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_13x.compute(guess=[4.56964356, 0.], pp=1, qq=13, sbegin=2, send=5.5, checkonly=True)
+# # Island m = 13, n = ?
+# fp_13o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_13o.compute(guess=[4.54492985, -0.07441066], pp=1, qq=13, sbegin=2, send=5.5, checkonly=True)
+# fp_13x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_13x.compute(guess=[4.56964356, 0.], pp=1, qq=13, sbegin=2, send=5.5, checkonly=True)
 
-# Island m = 6, n = ?
-fp_6o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_6o.compute(guess=[4.49199436, -0.1779669], pp=1, qq=6, sbegin=2, send=5.5, checkonly=True)
-fp_6x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_6x.compute(guess=[4.60062493, 0.], pp=1, qq=6, sbegin=2, send=5.5, checkonly=True)
+# # Island m = 6, n = ?
+# fp_6o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_6o.compute(guess=[4.49199436, -0.1779669], pp=1, qq=6, sbegin=2, send=5.5, checkonly=True)
+# fp_6x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_6x.compute(guess=[4.60062493, 0.], pp=1, qq=6, sbegin=2, send=5.5, checkonly=True)
 
-# Island m = 19, n = ?
-fp_19o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_19o.compute(guess=[4.58393511, 0.], pp=1, qq=19, sbegin=2, send=5.5, checkonly=True)
-fp_19x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
-fp_19x.compute(guess=[4.5757102, -0.03811962], pp=1, qq=19, sbegin=2, send=5.5, checkonly=True)
-
-
-colors = ['red', 'green', 'blue', 'yellow']
-for ii, fp in enumerate([fp_7o, fp_13o, fp_6o, fp_19o]):
-    results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
-    for rr in results:
-        axs[1,0].scatter(rr[0], rr[2], marker="o", edgecolors="black", linewidths=1, color=colors[ii])
-
-for ii, fp in enumerate([fp_7x, fp_13x, fp_6x, fp_19x]):
-    results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
-    for rr in results:
-        axs[1,0].scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1, color=colors[ii])
-proc0_print(f'GreenesResidues for X-points:\n m=7 - {fp_7x.GreenesResidue}\n m=13 - {fp_13x.GreenesResidue}, \n m=6 - {fp_6x.GreenesResidue}, \n m=19 - {fp_19x.GreenesResidue}')
+# # Island m = 19, n = ?
+# fp_19o = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_19o.compute(guess=[4.58393511, 0.], pp=1, qq=19, sbegin=2, send=5.5, checkonly=True)
+# fp_19x = FixedPoint(pyoproblem, pparams, integrator_params=iparams)
+# fp_19x.compute(guess=[4.5757102, -0.03811962], pp=1, qq=19, sbegin=2, send=5.5, checkonly=True)
 
 
-axs[1,0].set_xlim(3.9, 4.7)
-axs[1,0].set_ylim(-0.5, 0.1)
-fig.savefig(__file__ + f'_fixed_points_{label}.png', dpi=300)
+# colors = ['red', 'green', 'blue', 'yellow']
+# for ii, fp in enumerate([fp_7o, fp_13o, fp_6o, fp_19o]):
+#     results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+#     for rr in results:
+#         axs[1,0].scatter(rr[0], rr[2], marker="o", edgecolors="black", linewidths=1, color=colors[ii])
+
+# for ii, fp in enumerate([fp_7x, fp_13x, fp_6x, fp_19x]):
+#     results = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+#     for rr in results:
+#         axs[1,0].scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1, color=colors[ii])
+# proc0_print(f'GreenesResidues for X-points:\n m=7 - {fp_7x.GreenesResidue}\n m=13 - {fp_13x.GreenesResidue}, \n m=6 - {fp_6x.GreenesResidue}, \n m=19 - {fp_19x.GreenesResidue}')
 
 
-from pyoculus.integrators import RKIntegrator
-iparams = dict()
-iparams["rtol"] = 1e-13
-iparams["ode"] = pyoproblem.f
-iparams["type"] = "dop853"
-integrator = RKIntegrator(iparams)
+# axs[1,0].set_xlim(3.9, 4.7)
+# axs[1,0].set_ylim(-0.5, 0.1)
+# fig.savefig(__file__ + f'_fixed_points_{label}.png', dpi=300)
 
-def evolution(rz, phi0 = 0, dzeta = 2*np.pi/10, pp = 10, qq = 2):
-    print(rz)
-    theta0 = np.arctan2(rz[1]-pyoproblem._Z0, rz[0]-pyoproblem._R0)
-    ic = np.array([rz[0], rz[1], pyoproblem._R0, pyoproblem._Z0, theta0])
-    integrator.set_initial_value(phi0, ic)
-    try:
-        out = integrator.integrate(phi0+qq*dzeta)
-    except:
-        out = [np.nan, np.nan, np.nan, np.nan, np.nan]
-    print(out[:2])
-    # return rz_e # - rz
-    return out[4] + dzeta * pp
 
-def Bphi(r, z, phi = 0):
-    xyz = np.array([r*np.cos(phi), r*np.sin(phi), z])
-    B = pyoproblem.B(xyz)
-    return np.matmul(pyoproblem._inv_Jacobian(r, phi, z), B)[1]
+# from pyoculus.integrators import RKIntegrator
+# iparams = dict()
+# iparams["rtol"] = 1e-13
+# iparams["ode"] = pyoproblem.f
+# iparams["type"] = "dop853"
+# integrator = RKIntegrator(iparams)
+
+# def evolution(rz, phi0 = 0, dzeta = 2*np.pi/10, pp = 10, qq = 2):
+#     print(rz)
+#     theta0 = np.arctan2(rz[1]-pyoproblem._Z0, rz[0]-pyoproblem._R0)
+#     ic = np.array([rz[0], rz[1], pyoproblem._R0, pyoproblem._Z0, theta0])
+#     integrator.set_initial_value(phi0, ic)
+#     try:
+#         out = integrator.integrate(phi0+qq*dzeta)
+#     except:
+#         out = [np.nan, np.nan, np.nan, np.nan, np.nan]
+#     print(out[:2])
+#     # return rz_e # - rz
+#     return out[4] + dzeta * pp
+
+# def Bphi(r, z, phi = 0):
+#     xyz = np.array([r*np.cos(phi), r*np.sin(phi), z])
+#     B = pyoproblem.B(xyz)
+#     return np.matmul(pyoproblem._inv_Jacobian(r, phi, z), B)[1]
 
 # checking
 # R = np.linspace(3.5, 3.8, 40)
