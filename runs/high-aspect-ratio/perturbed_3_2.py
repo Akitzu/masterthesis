@@ -34,10 +34,10 @@ pparams["Rend"] = 8.5
 pplot_perturbed = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)
 
 # # R-only computation
-pplot_perturbed.compute()
+# pplot_perturbed.compute()
 
-# fig, ax = pplot_perturbed.plot(marker=".", s=1)
-pplot_perturbed.save("data/perturbed_3_2.npy")
+# # fig, ax = pplot_perturbed.plot(marker=".", s=1)
+# pplot_perturbed.save("data/perturbed_3_2.npy")
 
 fig, ax = plt.subplots()
 xydata = np.load("data/perturbed_3_2.npy")
@@ -86,15 +86,10 @@ manifold = Manifold(pyoproblem, fixedpoint, fp_x2, integrator_params=iparams)
 
 manifold.choose(signs=[[1, -1], [-1, 1]])
 
-manifold.compute(neps=30, nintersect=8, directions="inner")
+manifold.compute(neps=30, nintersect=6, directions="inner")
 manifold.plot(ax=ax, directions="isiu")
 fig.savefig("figs/inner.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
 fig.savefig("figs/inner.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
-
-manifold.compute(neps=30, nintersect=9, directions="outer")
-manifold.plot(ax=ax, directions="osou")
-fig.savefig("figs/outer.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
-fig.savefig("figs/outer.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 manifold.onworking = manifold.outer
 manifold.find_clinics(n_points=4)
@@ -114,21 +109,34 @@ for i, clinic in enumerate(manifold.onworking["clinics"]):
     
     hu_i = manifold.integrate(manifold.onworking["rfp_u"] + eps_u_i * manifold.onworking["vector_u"], n_u, 1)
     ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
-    fig.savefig(f"figs/heteroclinics_inner_{i}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
-    fig.savefig(f"figs/heteroclinics_inner_{i}.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+fig.savefig(f"figs/heteroclinics_inner_end.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig(f"figs/heteroclinics_inner_end.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+manifold.compute(neps=30, nintersect=6, directions="outer")
+manifold.plot(ax=ax, directions="osou")
+fig.savefig("figs/outer.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig("figs/outer.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 manifold.onworking = manifold.outer
 manifold.turnstile_area(True)
 for i, clinic in enumerate(manifold.onworking["clinics"]):
     eps_s_i, eps_u_i = clinic[1:3]
     
-    hu_i = manifold.integrate(manifold.onworking["rfp_u"] + eps_u_i * manifold.onworking["vector_u"], n_u, 1)
+    hu_i = manifold.integrate(manifold.onworking["rfp_u"] + eps_u_i * manifold.onworking["vector_u"], n_u-2, 1)
     ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="red", edgecolor='cyan', zorder=10, label=f'$h_{i+1}$')
-    fig.savefig(f"figs/heteroclinics_outer_{i}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
-    fig.savefig(f"figs/heteroclinics_outer_{i}.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
-ax.set_xlim(5.2, 6.5)
-ax.set_ylim(1.4, 2.1)
+fig.savefig(f"figs/heteroclinics_outer_end.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+fig.savefig(f"figs/heteroclinics_outer_end.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+breakpoint()
+manifold.compute(neps=30, nintersect=7, directions="inner")
+manifold.plot(ax=ax, directions="isiu")
+manifold.compute(neps=30, nintersect=7, directions="outer")
+manifold.plot(ax=ax, directions="osou")
+
+ax.set_xlim(6, 6.6)
+ax.set_ylim(1.3, 1.9)
 fig.savefig("figs/closeup.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
 fig.savefig("figs/closeup.pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 

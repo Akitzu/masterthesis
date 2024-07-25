@@ -5,8 +5,8 @@ import matplotlib.lines as mlines
 import numpy as np
 
 ### Creating the meshgrid and check at the psi values
-r = np.linspace(1, 14, 60)
-z = np.linspace(-6, 2.5, 60)
+r = np.linspace(3, 10, 60)
+z = np.linspace(-7, 3, 60)
 R, Z = np.meshgrid(r, z)
 
 separatrix = {"R": 6, "Z": -5.5}
@@ -18,8 +18,10 @@ psi_sep = np.array([-10*psi_circularcurrentloop([rr, 0., zz], **separatrix) for 
 ### Plot the flux surfaces
 fig, ax = plt.subplots()
 
-ax.set_xlim(1, 14)
-ax.set_ylim(-6, 2.5)
+# ax.set_xlim(1, 14)
+# ax.set_ylim(-6, 2.5)
+ax.set_xlim(3, 10)
+ax.set_ylim(-7, 3)
 
 contour1 = ax.contour(R, Z, psi_b, levels=50, colors="navy", alpha=0.3)
 contour2 = ax.contour(R, Z, psi_sep, levels=40, linewidths=1,

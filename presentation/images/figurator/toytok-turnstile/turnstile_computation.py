@@ -4,15 +4,12 @@ import matplotlib.pyplot as plt
 plt.style.use('lateky')
 import numpy as np
 from pathlib import Path
-import sys
+from horus import plot_poincare_pyoculus
 
-DPI = 600
+DPI = 300
 
-current_folder = Path('').absolute()
-latexplot_folder = Path("../../../../latex/images/plots").absolute()
 saving_folder = Path("../../turnstile_calc").absolute()
-sys.path.append(str(latexplot_folder))
-from plot_poincare import plot_poincare_pyoculus
+loading_folder = Path("C:/Users/Ludovic/kDrive/etudes/EPFL/masterthesis/runs/toytok/perturbed-6-1").absolute()
 
 ### Creating the pyoculus problem object
 print("\nCreating the pyoculus problem object\n")
@@ -62,7 +59,7 @@ if fixedpoint.successful:
 else:
     raise ValueError("X-point not found")
 
-xydata = np.load(latexplot_folder / "toytok-6-1/poincare.npy")
+xydata = np.load(loading_folder / "data/perturbed_6_1.npy")
 
 # Manifold
 iparams = dict()
@@ -145,18 +142,18 @@ def plot_contour(fwd_ev, ax, num = 2, onlyclinics=False):
     stable_2, stable_1 = stable[:neps+1], stable[neps-1:]
     unstable_1, unstable_2 = unstable[:neps+1], unstable[neps-1:]
 
-#     if num == 2:
-#         ax.scatter(*unstable_2[-2:], marker='d', color='tab:blue', edgecolor='grey', zorder=13)
-#         ax.scatter(*unstable_2[:2], marker='s', color='tab:orange', edgecolor='grey', zorder=13)
-#         if not onlyclinics:
-#             ax.plot(unstable_2[::2], unstable_2[1::2], '.-', color='red', linewidth=2, markersize=1, zorder=12)
-#             ax.plot(stable_2[::2], stable_2[1::2], '.-', color='green', linewidth=2, markersize=1, zorder=12)
-#     if num == 1:
-#         ax.scatter(*unstable_1[:2], marker='d', color='tab:blue', edgecolor='grey', zorder=13)
-#         ax.scatter(*unstable_1[-2:], marker='s', color='tab:orange', edgecolor='grey', zorder=13)
-#         if not onlyclinics:
-#             ax.plot(unstable_1[::2], unstable_1[1::2], '.-', color='red', linewidth=2, markersize=1, zorder=12)
-#             ax.plot(stable_1[::2], stable_1[1::2], '.-', color='green', linewidth=2, markersize=1, zorder=12)
+    if num == 2:
+        ax.scatter(*unstable_2[-2:], marker='d', color='tab:blue', edgecolor='grey', zorder=13)
+        ax.scatter(*unstable_2[:2], marker='s', color='tab:orange', edgecolor='grey', zorder=13)
+        if not onlyclinics:
+            ax.plot(unstable_2[::2], unstable_2[1::2], '.-', color='red', linewidth=2, markersize=1, zorder=12)
+            ax.plot(stable_2[::2], stable_2[1::2], '.-', color='green', linewidth=2, markersize=1, zorder=12)
+    if num == 1:
+        ax.scatter(*unstable_1[:2], marker='d', color='tab:blue', edgecolor='grey', zorder=13)
+        ax.scatter(*unstable_1[-2:], marker='s', color='tab:orange', edgecolor='grey', zorder=13)
+        if not onlyclinics:
+            ax.plot(unstable_1[::2], unstable_1[1::2], '.-', color='red', linewidth=2, markersize=1, zorder=12)
+            ax.plot(stable_1[::2], stable_1[1::2], '.-', color='green', linewidth=2, markersize=1, zorder=12)
 
 # # Plotting the contour evolution
 # ratio = 16/9
@@ -292,19 +289,23 @@ cxlim, cylim = ax.get_xlim(), ax.get_ylim()
 plot_poincare_pyoculus(xydata, ax)
 ax.set_xlim(cxlim)
 ax.set_ylim(cylim)
-fig.set_dpi(DPI)
-# fig.savefig(saving_folder / "verification_0.png", bbox_inches='tight', pad_inches=0.1)
+fig.savefig(saving_folder / "verification_0.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
 ax.plot(loop[:,0], loop[:,1], '.:', color='black', linewidth=2, markersize=2, zorder=12)
 ax.scatter(6.7913, -4.0464, color='black', label=r'$B^\phi$ evaluation point', zorder=14)
 ax.legend(loc='lower right')
-fig.set_dpi(DPI)
-# fig.savefig(saving_folder / "verification_1.png", bbox_inches='tight', pad_inches=0.1)
+fig.savefig(saving_folder / "verification_1.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
 
 # Calculation of the area using triangle approximation
 A = unstable_2[0]
 B = unstable_2[-1]
 C = np.array([6.7833, -4.111])
 area_tri = 0.5*np.abs(np.cross(B-A, C-A))
+
+# Calculate the height (perpendicular distance) from C to AB
+AB = B - A
+AB_normalized = AB / np.linalg.norm(AB)
+projection_length = np.dot((C - A), AB_normalized)
+D = A + projection_length * AB_normalized
 
 fig, ax = plt.subplots()
 plot_contour(0, ax)
@@ -315,8 +316,23 @@ ax.set_ylim(cylim)
 ax.plot([A[0], B[0], C[0], A[0]], [A[1], B[1], C[1], A[1]], 'o-', color='black', linewidth=2, markersize=2, zorder=14)
 ax.scatter(6.7913, -4.0464, color='black', label=r'$B^\phi$ evaluation point', zorder=14)
 ax.legend(loc='lower right')
-fig.set_dpi(DPI)
-# fig.savefig(saving_folder / "verification_2.png", bbox_inches='tight', pad_inches=0.1)
+
+fig.savefig(saving_folder / "verification_2_1.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
+ax.plot([C[0], D[0]], [C[1], D[1]], '--', color='black', zorder=14)
+fig.savefig(saving_folder / "verification_2_2.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
+
+mid_AB = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]
+ax.text(*(mid_AB+np.array([-0.04, 0.02])), f'{np.linalg.norm(AB):.2f}', ha='center', va='center', backgroundcolor='white',
+        zorder=14, fontsize=12, fontweight='bold')
+
+mid_CD = [(C[0] + D[0]) / 2, (C[1] + D[1]) / 2]
+ax.text(*(mid_CD+np.array([0.01, 0.01])), f'{np.linalg.norm(C-D):.2f}', ha='center', va='center', backgroundcolor='white',
+        zorder=14, fontsize=12, fontweight='bold')
+fig.savefig(saving_folder / "verification_2_3.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
+
+
+fig.savefig(saving_folder / "verification_2.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
+fig.savefig(saving_folder / "verification_2.pdf", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
 
 # B^phi estimation
 B_phi = pyoproblem.B([6.7913, 0., -4.0464])[1] * 6.7913

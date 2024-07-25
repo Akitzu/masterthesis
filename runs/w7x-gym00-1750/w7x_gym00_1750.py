@@ -99,7 +99,7 @@ fp_x2.compute(guess=[5.883462104879646, 0.6556749703570318], pp=5, qq=4, sbegin=
 
 results_x = [list(p) for p in zip(fp_x1.x, fp_x1.y, fp_x1.z)]
 for rr in results_x:
-    ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1)
+    ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1, zorder=20)
 fig.savefig(saving_folder / "gym99_1750_fixedpoints.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
 
 # Working on manifold
@@ -124,7 +124,7 @@ areas = mp.outer["areas"]
 
 mp.onworking = mp.inner
 mp.find_clinic_single(0.0009232307475864197, 0.0009969436196850716, method="lm")
-mp.find_clinics_single(0.0011721658811519728, 0.0020577144928870914, n_s=6, n_u=5)
+mp.find_clinic_single(0.0011721658811519728, 0.0020577144928870914, n_s=6, n_u=5)
 
 mp.turnstile_area()
 
@@ -148,11 +148,11 @@ np.save("area_inner.npy", mp.inner["areas"])
 
 histories = mp.outer["clinic_history"]
 marker = ['d', 's']
-colors = ['tab:blue', 'tab:orange']
+colors = ['royalblue', 'royalblue']
 
 clinics = mp.outer["clinics"]
-ax.scatter(*clinics[0][-1], marker=marker[0], color=colors[0], edgecolor='grey', zorder=13)
-ax.scatter(*clinics[1][-1], marker=marker[1], color=colors[1], edgecolor='grey', zorder=13)
+ax.scatter(*clinics[0][-1], marker=marker[0], color=colors[0], edgecolor='cyan', zorder=13)
+ax.scatter(*clinics[1][-1], marker=marker[1], color=colors[1], edgecolor='cyan', zorder=13)
 ax.set_xlim(5.3, 6)
 ax.set_ylim(0.48, ratio*0.7)
 
@@ -162,9 +162,9 @@ fig.savefig(saving_folder / f"homoclinic_0.png", bbox_inches='tight', pad_inches
 for jj in range(8):
     for ii in range(2):
         fb = histories[ii][0][jj]
-        ax.scatter(*fb, marker=marker[ii], color=colors[ii], edgecolor='grey', zorder=13)
+        ax.scatter(*fb, marker=marker[ii], color=colors[ii], edgecolor='cyan', zorder=13)
         fb = histories[ii][1][jj]
-        ax.scatter(*fb, marker=marker[ii], color=colors[ii], edgecolor='grey', zorder=13)
+        ax.scatter(*fb, marker=marker[ii], color=colors[ii], edgecolor='cyan', zorder=13)
         fig.set_dpi(DPI)
         fig.savefig(saving_folder / f"homoclinic_{jj+1}.png", bbox_inches='tight', pad_inches=0.1)
 

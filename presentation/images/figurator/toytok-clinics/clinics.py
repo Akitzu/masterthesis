@@ -9,10 +9,10 @@ import sys
 DPI = 600
 
 current_folder = Path('').absolute()
-latexplot_folder = Path("../../../../latex/images/plots").absolute()
+latexplot_folder = Path("../../../../runs/toytok/perturbed-6-1").absolute()
 saving_folder = Path("../../clinic_finder").absolute()
 sys.path.append(str(latexplot_folder))
-from plot_poincare import plot_poincare_pyoculus
+from horus import plot_poincare_pyoculus
 
 ### Creating the pyoculus problem object
 print("\nCreating the pyoculus problem object\n")
@@ -62,7 +62,7 @@ if fixedpoint.successful:
 else:
     raise ValueError("X-point not found")
 
-xydata = np.load(latexplot_folder / "toytok-6-1/poincare.npy")
+xydata = np.load(latexplot_folder / "data/perturbed_6_1.npy")
 neps = 50
 nintersect = 9
 iparams = dict()
@@ -74,7 +74,7 @@ manifold = Manifold(pyoproblem, fixedpoint, fixedpoint, integrator_params=iparam
 manifold.choose(signs=[[1, 1], [1, 1]])
 
 print("\nComputing the manifold\n")
-eps_s, eps_u = 1e-6, 1e-6
+eps_s, eps_u = 1e-6, 3e-6
 manifold.compute(nintersect = nintersect, neps = neps,  eps_s=eps_s, eps_u=eps_u, directions='inner')
 
 # Settings
@@ -92,7 +92,7 @@ textpos = np.array([
                     [[6.021202290060593, -4.3029348558889975], [6.465727551955984, -4.33603780092376]],
                     [[5.069787040314116, -3.565288329021239], [7.7375359580630345, -3.5882861645190745]],
                     [[3.7129147459418212, -1.5184809697138801], [8.979419074946152, 0.6893112380783277]],
-                    [[3.6899169104439857, 1.1032722770393661], [7.55355327408035, 2.3221575584246477]],
+                    [[7.38, 2.1], [3.65, -0.31]],
                     [[8.795436390963468, 1.2182614545285446], [3.827903923430999, -1.77145716019007]],
                     [[8.26648617451325, -3.1743251255580356], [4.839808685335761, -3.4043034805363903]],
                     [[6.557312346930061, -4.576086823714776], [5.841741166667323, -4.38941608103754]],
@@ -195,23 +195,22 @@ def generate_figure(i, s_shift, lims, ratio=9/16):
     return fig, axs
 
 lims = np.array([
-                 [[6.20361, 6.20366], [-4.49637, -4.49633]], 
-                 [[3.7, 7.8],[-0.4, 2.2]],
+                 [[6.2036, 6.203705], [-4.49637, -4.4963]], 
+                 [[3, 8],[-1, 2.2]],
                 ])
 ratio = (lims[0,1,1]-lims[0,1,0])/(lims[0,0,1]-lims[0,0,0])
 fig, axs = generate_figure(6, 0, lims, ratio)
 # saving
-fig.set_dpi(DPI)
-fig.savefig(saving_folder / "clinic_start_0.png", bbox_inches='tight', pad_inches=0.1)
+fig.savefig(saving_folder / "clinic_start_0.png", dpi = DPI, bbox_inches='tight', pad_inches=0.1)
 plt.close(fig)
 
 # Easier to find there
-i, s_shift = 6, 2
+i, s_shift = 6, 0
 n_s, n_u = i+s_shift, i-s_shift
-lims = np.array([
-                 [[6.20361, 6.20366], [-4.49637, -4.49633]], 
-                 [[6, 9],[-4.52, None]],
-                ])
+# lims = np.array([
+#                  [[6.20361, 6.20366], [-4.49637, -4.49633]], 
+#                  [[6, 9],[-4.52, None]],
+#                 ])
 ratio = (lims[0,1,1]-lims[0,1,0])/(lims[0,0,1]-lims[0,0,0])
 fig, axs = generate_figure(i, s_shift, lims, ratio)
 
@@ -223,36 +222,49 @@ r_guess_u = rfp + eps_u_i * vector_u
 r_end_s_i = manifold.integrate(r_guess_s, n_s, -1).T[-1]
 r_end_u_i = manifold.integrate(r_guess_u, n_u, 1).T[-1]
 dr = r_end_s_i - r_end_u_i
-dr *= 0.9
+dr *= 0.8
 
 axs[0].scatter(*r_end_s_i, marker='d', color='green', edgecolors='black', zorder=13)
 axs[0].scatter(*r_end_u_i, marker='d', color='red', edgecolors='black', zorder=13)
-axs[0].arrow(*r_end_u_i, *dr, head_width=0.05, head_length=0.1, fc='k', ec='k', zorder=13)
+axs[0].arrow(*(r_end_u_i+0.05*dr), *dr, head_width=0.3, head_length=0.3, fc='tab:blue', ec='k', zorder=13, linewidth=1, width=0.06)
 
 axs[1].scatter(*r_guess_s, marker='d', color='green', edgecolors='black', zorder=13)
 axs[1].scatter(*r_guess_u, marker='d', color='red', edgecolors='black', zorder=13)
 
-fig.set_dpi(DPI)
-fig.savefig(saving_folder / "clinic_start_1.png", bbox_inches='tight', pad_inches=0.1)
+fig.savefig(saving_folder / "clinic_start_1.png", dpi = DPI, bbox_inches='tight', pad_inches=0.1)
 
 # Finding the homoclinic
-fig, axs = generate_figure(i, s_shift, lims, ratio)
 manifold.onworking = manifold.inner
 manifold.find_clinic_single(eps_s_i, eps_u_i, n_s=n_s, n_u=n_u)
 
 for ii, hist in enumerate(manifold.inner["history"]):
-    r_guess_s = rfp + hist[0,0] * vector_s
-    r_guess_u = rfp + hist[0,1] * vector_u
-    
-    axs[0].scatter(*hist[1], marker='d', color='grey', edgecolors='green', zorder=13)
-    axs[0].scatter(*hist[2], marker='d', color='grey', edgecolors='red', zorder=13)
-    
-    axs[1].scatter(*r_guess_s, marker='d', color='grey', edgecolors='green', zorder=13)
-    axs[1].scatter(*r_guess_u, marker='d', color='grey', edgecolors='red', zorder=13)
+    if ii%5 == 3:
+        fig, axs = generate_figure(i, s_shift, lims, ratio)
+        
+        r_guess_s = rfp + hist[0,0] * vector_s
+        r_guess_u = rfp + hist[0,1] * vector_u
+        
+        axs[0].scatter(*hist[1], marker='d', color='green', edgecolors='black', zorder=13)
+        axs[0].scatter(*hist[2], marker='d', color='red', edgecolors='black', zorder=13)
+        
+        axs[1].scatter(*r_guess_s, marker='d', color='green', edgecolors='black', zorder=13)
+        axs[1].scatter(*r_guess_u, marker='d', color='red', edgecolors='black', zorder=13)
+        
+        fig.savefig(saving_folder / f"clinic_search_{ii}.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
 
-    if ii%2 == 0:
-        fig.set_dpi(DPI)
-        fig.savefig(saving_folder / f"clinic_search_{ii}.png", bbox_inches='tight', pad_inches=0.1)
+fig, axs = generate_figure(i, s_shift, lims, ratio)
+eps_s, eps_u = manifold.inner["clinics"][0][1:3]
+r_guess_s = rfp + eps_s * vector_s
+r_guess_u = rfp + eps_u * vector_u
+
+hist = manifold.inner["clinics"][0][-2:]
+axs[0].scatter(*hist[0], marker='d', color='grey', edgecolors='black', zorder=13)
+axs[1].scatter(*r_guess_s, marker='d', color='green', edgecolors='black', zorder=13)
+axs[1].scatter(*r_guess_u, marker='d', color='red', edgecolors='black', zorder=13)
+
+fig.savefig(saving_folder / f"clinic_search_end.png", dpi=DPI, bbox_inches='tight', pad_inches=0.1)
+breakpoint()
+
 
 # Find the second clinic
 fund = manifold.inner["fundamental_segment"]

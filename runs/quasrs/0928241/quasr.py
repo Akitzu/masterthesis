@@ -7,13 +7,10 @@ from horus import poincare
 import pandas as pd
 import numpy as np
 from pathlib import Path
-import sys
+from horus import plot_poincare_simsopt
+import pickle
 
-latexplot_folder = Path("../../../latex/images/plots").absolute()
 saving_folder = Path("figs").absolute()
-
-sys.path.append(str(latexplot_folder))
-from plot_poincare import plot_poincare_simsopt
 
 surfaces, ma, coils = load(f'serial0928241.json')
 
@@ -69,12 +66,13 @@ ps = SimsoptBfieldProblem.from_coils(R0=R0, Z0=Z0, Nfp=3, coils=coils, interpola
 # pplane = poincare(ps._mf_B, RZs, phis, ps.surfclassifier, tmax = 1000, tol = 1e-11, plot=False)
 # pplane.save("poincare_0928241.pkl")
 
-# fig, ax = plt.subplots()
-# plot_poincare_simsopt(pplane.phi_hits, ax, color=None)
-# ax.set_xlim(0.3, 1.6)
-# ax.set_ylim(-0.35, 0.35)
+tys, phi_hits = pickle.load(open("poincare_0928241.pkl", "rb"))
+fig, ax = plt.subplots()
+plot_poincare_simsopt(phi_hits, ax, color=None)
+ax.set_xlim(0.3, 1.6)
+ax.set_ylim(-0.35, 0.35)
 
-# fig.savefig(saving_folder / "poincare_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
+fig.savefig(saving_folder / "poincare_0928241.png", dpi=600, bbox_inches="tight", pad_inches=0.1)
 
 # Finding all fixedpoints
 
@@ -101,16 +99,17 @@ fp11_x1.compute(guess=[1.43378117, 0.05140443], pp=3, qq=6, sbegin=0.4, send=1.6
 fp11_x2 = FixedPoint(ps, pparams, integrator_params=iparams)
 fp11_x2.compute(guess=[1.43378117, -0.05140443], pp=3, qq=6, sbegin=0.4, send=1.6, checkonly=True)
 
-# for fp in [fp11_o1, fp11_o2, fp11_o3, fp11_o4]:
-#     results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
-#     for rr in results11:
-#         ax.scatter(rr[0], rr[2], marker="o", edgecolors="black", linewidths=1)
-# fig.savefig(saving_folder / "fixedpoint_o_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
-# for fp in [fp11_x1, fp11_x2]:
-#     results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
-#     for rr in results11:
-#         ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1)
-# fig.savefig(saving_folder / "fixedpoint_ox_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
+for i, fp in enumerate([fp11_o1, fp11_o2, fp11_o3, fp11_o4]):
+    results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    for rr in results11:
+        ax.scatter(rr[0], rr[2], marker="o", edgecolors="black", linewidths=1, zorder=20)
+    fig.savefig(saving_folder / f"fixedpoint_o_0928241_{i}.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
+
+for i, fp in enumerate([fp11_x1, fp11_x2]):
+    results11 = [list(p) for p in zip(fp.x, fp.y, fp.z)]
+    for rr in results11:
+        ax.scatter(rr[0], rr[2], marker="X", edgecolors="black", linewidths=1, zorder=20)
+    fig.savefig(saving_folder / f"fixedpoint_ox_0928241_{i}.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
 data = [
     {'r': fp11_x1.x[0], 'z': fp11_x1.z[0], 'GreenesResidue': fp11_x1.GreenesResidue},
@@ -129,10 +128,10 @@ iparam["rtol"] = 1e-13
 mp = Manifold(ps, fp11_x2, fp11_x1, integrator_params=iparam)
 mp.choose(signs=[[1, 1],[1, -1]])
 
-# mp.compute(nintersect = 4, epsilon=1e-6, neps = 20)
+mp.compute(nintersect = 4, epsilon=1e-6, neps = 20)
 
-# ax.set_xlim(1.3, 1.6)
-# ax.set_ylim(-0.1, 0.1)
+ax.set_xlim(1.3, 1.6)
+ax.set_ylim(-0.1, 0.1)
 
 # mp.plot(ax=ax, directions="isiu")
 # fig.savefig(saving_folder / "manifold_inner_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
@@ -149,13 +148,13 @@ mp.turnstile_area(False)
 
 marker = ["X", "o", "s", "p", "P", "*", "x", "D", "d", "^", "v", "<", ">"]
 confns = mp.onworking["find_clinic_configuration"]
-n_u = confns["n_u"]+confns["n_s"]+2
+n_u = confns["n_u"]+confns["n_s"]
 
-# for i, clinic in enumerate(mp.onworking["clinics"]):
-#     eps_s_i, eps_u_i = clinic[1:3]
+for i, clinic in enumerate(mp.onworking["clinics"]):
+    eps_s_i, eps_u_i = clinic[1:3]
     
-#     hu_i = mp.integrate(mp.onworking["rfp_u"] + eps_u_i * mp.onworking["vector_u"], n_u, 1)
-#     ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=20, label=f'$h_{i+1}$')
+    hu_i = mp.integrate(mp.onworking["rfp_u"] + eps_u_i * mp.onworking["vector_u"], n_u, 1)
+    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="royalblue", edgecolor='cyan', zorder=20, label=f'$h_{i+1}$')
 
 # fig.savefig(saving_folder / "inner_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
@@ -171,11 +170,11 @@ mp.turnstile_area(False)
 # outer_areas = mp.outer["areas"]
 # np.save("outer_areas_0928241.npy", outer_areas)
 
-# for i, clinic in enumerate(mp.onworking["clinics"]):
-#     eps_s_i, eps_u_i = clinic[1:3]
+for i, clinic in enumerate(mp.onworking["clinics"]):
+    eps_s_i, eps_u_i = clinic[1:3]
     
-#     hu_i = mp.integrate(mp.onworking["rfp_u"] + eps_u_i * mp.onworking["vector_u"], n_u, 1)
-#     ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="red", edgecolor='cyan', zorder=20, label=f'$h_{i+1}$')
+    hu_i = mp.integrate(mp.onworking["rfp_u"] + eps_u_i * mp.onworking["vector_u"], n_u, 1)
+    ax.scatter(hu_i[0,:], hu_i[1,:], marker=marker[i], color="red", edgecolor='cyan', zorder=20, label=f'$h_{i+1}$')
 
 # fig.savefig(saving_folder / "outer_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
 
@@ -188,20 +187,20 @@ mp.turnstile_area(False)
 
 # Convergence figure
 
-fig_conv, ax_conv = plt.subplots()
+# fig_conv, ax_conv = plt.subplots()
 
-# ar = np.zeros((2, 3))
-for ii, pot in enumerate(mp.inner["potential_integrations"]):
-    ns = min(len(pot[0]), len(pot[1]))
-    # ar[ii,:] = pot[0][1:ns]-pot[1][:ns-1]
-    ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=20)
+# # ar = np.zeros((2, 3))
+# for ii, pot in enumerate(mp.inner["potential_integrations"]):
+#     ns = min(len(pot[0]), len(pot[1]))
+#     # ar[ii,:] = pot[0][1:ns]-pot[1][:ns-1]
+#     ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=20)
 
-for ii, pot in enumerate(mp.outer["potential_integrations"]):
-    ns = min(len(pot[0]), len(pot[1]))
-    # ar[ii,:] = pot[0][1:ns]-pot[1][:ns-1]
-    ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=20)
+# for ii, pot in enumerate(mp.outer["potential_integrations"]):
+#     ns = min(len(pot[0]), len(pot[1]))
+#     # ar[ii,:] = pot[0][1:ns]-pot[1][:ns-1]
+#     ax_conv.scatter(1+np.arange(ns-1), pot[0][1:ns]-pot[1][:ns-1], zorder=20)
 
-ax_conv.set_xlabel('Iteration')
-ax_conv.set_ylabel('Potential integration')
+# ax_conv.set_xlabel('Iteration')
+# ax_conv.set_ylabel('Potential integration')
 
-fig_conv.savefig(saving_folder / "convergence_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)
+# fig_conv.savefig(saving_folder / "convergence_0928241.png", dpi=300, bbox_inches="tight", pad_inches=0.1)

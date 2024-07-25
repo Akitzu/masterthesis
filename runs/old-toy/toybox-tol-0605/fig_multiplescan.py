@@ -38,8 +38,9 @@ for file in flist:
     plt.errorbar(a[isok], r[isok], err_by_diff[isok], fmt='s', markersize=3, label=file.split('/')[0])
 
 plt.legend(loc='best')
-plt.xlabel('Amplitude', fontsize=16)
-plt.ylabel('Turnstile area', fontsize=16)
+plt.xlabel(r'Amplitude $\varepsilon_{amp}$', fontsize=16)
+plt.ylabel('Turnstile Flux', fontsize=16)
 plt.savefig('turnstile_area_18_3.png', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.savefig('turnstile_area_18_3.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 plt.show()

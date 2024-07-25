@@ -116,50 +116,42 @@ def plot(K, Nint, nev = 200, nx=30, ny=15, dpi=300, neps=800, msize = 3):
         ax.scatter(Ev[:, i, 0], Ev[:, i, 1], s=0.1, alpha=1., zorder = 10, c='black')
     # ax.axis('off')
 
-    from scipy.optimize import root
-    sol = root(fixedpoint, [0.5, 0.5], (K))
+    # from scipy.optimize import root
+    # sol = root(fixedpoint, [0.5, 0.5], (K))
 
-    jacobian = jiteddmap(jnp.array([0.5, 1.]), K)
-    ax.scatter(sol.x[0], sol.x[1], marker='X', color='tab:orange', edgecolor='black', zorder=30)
+    # jacobian = jiteddmap(jnp.array([0.5, 1.]), K)
+    # ax.scatter(sol.x[0], sol.x[1], marker='X', color='tab:orange', edgecolor='black', zorder=30)
   
-    lambda_s, v_s, lambda_u, v_u = eig(jacobian)
+    # lambda_s, v_s, lambda_u, v_u = eig(jacobian)
     
-    startconfig = start_config(1e-6, sol.x, lambda_u, v_u, jitedmap, neps, K)
-    path = evolve(startconfig, Nint, jitedmap, K)
-    out = path.T.flatten()
-    ax.plot(
-        out[::2],
-        out[1::2],
-        '.',
-        markersize=msize,
-        c='r', zorder=20)
-    startconfig = start_config(1e-6, sol.x, lambda_u, -v_u, jitedmap, neps, K)
-    path = evolve(startconfig, Nint, jitedmap, K)
-    out = path.T.flatten()
-    ax.plot(
-        out[::2],
-        out[1::2],
-        '.',
-        markersize=msize,
-        c='r', zorder=20)
-    startconfig = start_config(1e-6, sol.x, lambda_s, v_s, jitedreversed, neps, K)
-    path = evolve(startconfig, Nint, jitedreversed, K)
-    out = path.T.flatten()
-    ax.plot(
-        out[::2],
-        out[1::2],
-        '.',
-        markersize=msize,
-        c='g', zorder=20)
-    startconfig = start_config(1e-6, sol.x, lambda_s, -v_s, jitedreversed, neps, K)
-    path = evolve(startconfig, Nint, jitedreversed, K)
-    out = path.T.flatten()
-    ax.plot(
-        out[::2],
-        out[1::2],
-        '.',
-        markersize=msize,
-        c='g', zorder=20)
+    # startconfig = start_config(1e-6, sol.x, lambda_u, v_u, jitedmap, neps, K)
+    # path = evolve(startconfig, Nint, jitedmap, K)
+    # out = path.T.flatten()
+    # idx = np.concatenate(([0], np.where(np.abs((out[:-2:2] - out[2::2])) > 0.5)[0], [-1]))
+    # for i in range(len(idx)-1):
+    #     ax.plot(out[2*idx[i]+2:2*idx[i+1]:2], out[2*idx[i]+3:2*idx[i+1]+1:2], linewidth=0.5, c='r', zorder=20)
+
+    # startconfig = start_config(1e-6, sol.x, lambda_u, -v_u, jitedmap, neps, K)
+    # path = evolve(startconfig, Nint, jitedmap, K)
+    # out = path.T.flatten()
+    # idx = np.concatenate(([0], np.where(np.abs((out[:-2:2] - out[2::2])) > 0.5)[0], [-1]))
+    # for i in range(len(idx)-1):
+    #     ax.plot(out[2*idx[i]+2:2*idx[i+1]:2], out[2*idx[i]+3:2*idx[i+1]+1:2], linewidth=0.5, c='r', zorder=20)
+    
+    # startconfig = start_config(1e-6, sol.x, lambda_s, v_s, jitedreversed, neps, K)
+    # path = evolve(startconfig, Nint, jitedreversed, K)
+    # out = path.T.flatten()
+    # idx = np.concatenate(([0], np.where(np.abs((out[:-2:2] - out[2::2])) > 0.5)[0], [-1]))
+    # for i in range(len(idx)-1):
+    #     ax.plot(out[2*idx[i]+2:2*idx[i+1]:2], out[2*idx[i]+3:2*idx[i+1]+1:2], linewidth=0.5, c='g', zorder=20)
+
+    # startconfig = start_config(1e-6, sol.x, lambda_s, -v_s, jitedreversed, neps, K)
+    # path = evolve(startconfig, Nint, jitedreversed, K)
+    # out = path.T.flatten()
+    # idx = np.concatenate(([0], np.where(np.abs((out[:-2:2] - out[2::2])) > 0.5)[0], [-1]))
+    # for i in range(len(idx)-1):
+    #     ax.plot(out[2*idx[i]+2:2*idx[i+1]:2], out[2*idx[i]+3:2*idx[i+1]+1:2], linewidth=0.5, c='g', zorder=20)
+    
     return fig, ax
 
 if __name__ == "__main__":

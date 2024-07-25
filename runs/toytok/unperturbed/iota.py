@@ -12,7 +12,7 @@ if __name__ == "__main__":
     print("\nCreating the pyoculus problem object\n")
 
     separatrix = {"type": "circular-current-loop", "amplitude": -10, "R": 6, "Z": -5.5}
-    
+
     # Creating the pyoculus problem object, adding the perturbation here use the R, Z provided as center point
     pyoproblem = AnalyticCylindricalBfield.without_axis(
         6,
@@ -37,17 +37,17 @@ if __name__ == "__main__":
 
     # set up the Poincare plot
     pparams = dict()
-    pparams["nPtrj"] = 50
+    pparams["nPtrj"] = 150
     pparams["nPpts"] = 200
     pparams["zeta"] = 0
 
     # Set RZs for the normal (R-only) computation
     pparams["Z"] = pyoproblem._Z0
     pparams["Rbegin"] = pyoproblem._R0+1e-3
-    pparams["Rend"] = 9.2
+    pparams["Rend"] = pyoproblem._R0+2.42
 
     pplot = PoincarePlot(pyoproblem, pparams, integrator_params=iparams)
-    pplot.compute()
+    # pplot.compute()
 
     # Iota plot
     rs = np.linspace(pparams["Rbegin"], pparams["Rend"], pparams["nPtrj"]+1)
